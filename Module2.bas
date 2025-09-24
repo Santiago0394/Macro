@@ -372,23 +372,42 @@ Function ObtenerValorPorCodigoBinario(ByRef Lista As Collection, ByVal CodigoBus
 End Function
 
 
+Private Function SoloDigitos(ByVal valor As String) As String
+    Dim resultado As String
+    Dim i As Long
+    Dim ch As String
+
+    resultado = ""
+    For i = 1 To Len(valor)
+        ch = Mid$(valor, i, 1)
+        If ch >= "0" And ch <= "9" Then
+            resultado = resultado & ch
+        End If
+    Next i
+
+    SoloDigitos = resultado
+End Function
+
+
 Function GetDataPdf(Dataset As String, ByVal yearInput As Long) As Collection
  
     Dim texto As String
     Dim Bloques() As String
     Dim Lineas() As String
-    Dim codigo As Variant
+    Dim codigo As String
     Dim Descripcion As String
     Dim Valor As String
     Dim resultado As String
-    Dim CodigosValidos As Object
     Dim i As Integer, j As Integer
     Dim Bloque As String
     Dim PosTotal As Long
     Dim miLista As Collection
     Dim posicion As Long
-    
-    Dim ws As Worksheet
+
+    Dim idxCodigo As Long
+    Dim codigoBase As String
+    Dim ultimoIndiceValor As Long
+    Dim codigoNumerico As Long
     
     Set miLista = New Collection ' Inicializas la colección
   
@@ -405,7 +424,6 @@ Function GetDataPdf(Dataset As String, ByVal yearInput As Long) As Collection
     
     texto = Replace(texto, "TOTAL A PAGAR DENTRO DEL PLAZO LEGAL", "|")
     texto = Replace(texto, "+", "|")
-    
      
     ' Cortar el texto antes de "TOTAL A PAGAR"
     'PosTotal = InStr(1, texto, "TOTAL A PAGAR")
@@ -414,8 +432,6 @@ Function GetDataPdf(Dataset As String, ByVal yearInput As Long) As Collection
     'End If
     
     ' Separar el texto en bloques usando los códigos como delimitadores
-    Dim Flag As Boolean
-    
      
     Bloques = Split(texto, "|")
     'MsgBox texto
@@ -428,41 +444,59 @@ Function GetDataPdf(Dataset As String, ByVal yearInput As Long) As Collection
             ' Dividir el bloque en palabras
             Lineas = Split(Bloque, " ")
             
-            ' Extraer código, descripción y valor
-         
-            If BuscarEnArray(Lineas(0), yearInput) Then
-                
-                codigo = Lineas(0)
-                Valor = Lineas(UBound(Lineas))
-                Valor = Trim(Lineas(UBound(Lineas)))
-                Valor = FormatearNumero(Valor)
-                
-               
-                ' Construir la descripción manualmente
-                Descripcion = ""
-                If UBound(Lineas) > 1 Then
-                    For j = 1 To UBound(Lineas) - 1
-                        Descripcion = Descripcion & Lineas(j) & " "
-                    Next j
-                    Descripcion = Trim(Descripcion)
-                    
+            ' Buscar el índice del código válido dentro del bloque
+            idxCodigo = -1
+            For j = LBound(Lineas) To UBound(Lineas)
+                If BuscarEnArray(Lineas(j), yearInput) Then
+                    idxCodigo = j
+                    Exit For
                 End If
-                Descripcion = "    " & Descripcion & "    "
-                If CInt(Lineas(0)) = 91 Then
-                    miLista.Add Array(miLista, codigo, Descripcion, Lineas(1))
-                    'MsgBox Lineas(1)
-                Else
-                    miLista.Add Array(miLista, codigo, Descripcion, Valor)
-                End If
+            Next j
+            If idxCodigo <> -1 Then
+                codigoBase = SoloDigitos(Lineas(idxCodigo))
+                If Len(codigoBase) > 0 Then
+                    If Len(codigoBase) <= 3 Then
+                        codigo = Right$("000" & codigoBase, 3)
+                    Else
+                        codigo = codigoBase
+                    End If
 
-                ' Agregar el resultado formateado
-               
-                
-               
-                
-                'Call ImprimirListaEnHoja(miLista)
-               
-                 
+                    ' Obtener el índice del valor (última palabra no vacía)
+                    ultimoIndiceValor = -1
+                    For j = UBound(Lineas) To idxCodigo + 1 Step -1
+                        If Trim$(Lineas(j)) <> "" Then
+                            ultimoIndiceValor = j
+                            Exit For
+                        End If
+                    Next j
+
+                    If ultimoIndiceValor <> -1 Then
+                        Valor = FormatearNumero(Trim$(Lineas(ultimoIndiceValor)))
+
+                        If IsNumeric(codigoBase) Then
+                            codigoNumerico = CLng(codigoBase)
+                            If codigoNumerico = 91 Then
+                                If idxCodigo + 1 <= UBound(Lineas) And Trim$(Lineas(idxCodigo + 1)) <> "" Then
+                                    Valor = FormatearNumero(Trim$(Lineas(idxCodigo + 1)))
+                                End If
+                            End If
+                        End If
+
+                        ' Construir la descripción manualmente
+                        Descripcion = ""
+                        If ultimoIndiceValor - idxCodigo >= 2 Then
+                            For j = idxCodigo + 1 To ultimoIndiceValor - 1
+                                If Trim$(Lineas(j)) <> "" Then
+                                    Descripcion = Descripcion & Lineas(j) & " "
+                                End If
+                            Next j
+                            Descripcion = Trim$(Descripcion)
+                        End If
+                        Descripcion = "    " & Descripcion & "    "
+
+                        miLista.Add Array(miLista, codigo, Descripcion, Valor)
+                    End If
+                End If
             End If
         End If
     Next i
@@ -652,10 +686,10 @@ Function ProcesaDataSecuencial(rutaPDF As String, ByVal yearInput As Long) As St
                 '    MsgBox Cadena
                 'End If
                 
-                    ' Validar si la palabra está en CodigosValidos.Keys y tiene 3 o menos caracteres
+                    ' Validar si la palabra es un código válido dentro del dataset
                 'If ValidarCodigo(palabra) And Len(palabra) <= 3 And Flag And ObtenerPenultimaPalabra(Cadena) <> "Ley" Then
-                If BuscarEnArray(palabra, yearInput) And Len(palabra) <= 3 And Flag Then
-                    ' Si la palabra es un código válido y tiene 3 o menos caracteres, agregar "|" al inicio de la palabra
+                If BuscarEnArray(palabra, yearInput) And Flag Then
+                    ' Si la palabra es un código válido, agregar "|" al inicio de la palabra
                      
                     palabra = "|" & palabra
                     Cadena = ""
@@ -685,15 +719,23 @@ End Function
 Function BuscarEnArray(codigo As String, Optional yearInput As Long = 0) As Boolean
     Dim arr As Variant
     Dim i As Long
+    Dim codigoLimpio As String
+    Dim codigoValor As Long
+
     BuscarEnArray = False
 
-    If Len(codigo) <= 3 Then
-        If codigo = "039" Or codigo = "39" Then
-            If yearInput >= 2023 Then
-                BuscarEnArray = True
-            End If
-            Exit Function
+    codigoLimpio = SoloDigitos(codigo)
+    If Len(codigoLimpio) = 0 Then Exit Function
+    If Len(codigoLimpio) > 3 Then Exit Function
+    If Not IsNumeric(codigoLimpio) Then Exit Function
+
+    codigoValor = CLng(codigoLimpio)
+
+    If codigoValor = 39 Then
+        If yearInput >= 2023 Then
+            BuscarEnArray = True
         End If
+        Exit Function
     End If
     
     ' Definimos el array con datos de prueba
@@ -709,7 +751,7 @@ Function BuscarEnArray(codigo As String, Optional yearInput As Long = 0) As Bool
     
     ' Recorremos el array
     For i = LBound(arr) To UBound(arr)
-        If arr(i) = codigo And Len(codigo) <= 3 Then
+        If CLng(arr(i)) = codigoValor Then
             BuscarEnArray = True
             Exit Function ' Salimos de la función si encontramos el valor
         End If

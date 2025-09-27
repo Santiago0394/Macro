@@ -344,7 +344,7 @@ Private Sub ProcesarF29(ByVal yearInput As Long, ByVal positionRow As Integer, B
         If wsFiles.Cells(posArchivo + mes, 3).value <> "" Then
             Dataset = wsDataset.Cells(posArchivo + mes, 2).value
             If Dataset <> "" Then
-                Call BuscarCodigos(mes, positionRow, Dataset)
+                Call BuscarCodigos(mes, positionRow, Dataset, yearInput)
             Else
                 archivoTXT = archivoTXT & ": Sin datos"
                 MsgBox archivoTXT
@@ -356,13 +356,13 @@ End Sub
 '---------------------------------------------
 ' LECTURA DE LISTA/DATASET PARA F29
 '---------------------------------------------
-Sub BuscarCodigos(mes As Integer, ByVal positionRow As Integer, Dataset As String)
+Sub BuscarCodigos(mes As Integer, ByVal positionRow As Integer, Dataset As String, ByVal yearObjetivo As Long)
     Dim i As Integer, wsSummary As Worksheet
     Dim codigo As String, desc As String, Result As Variant
     Dim Records As Integer, pos As Integer
     Dim Lista As Collection: Set Lista = New Collection
 
-    Set Lista = GetDataPdf(Dataset)
+    Set Lista = GetDataPdf(Dataset, yearObjetivo)
     Records = 90
     Set wsSummary = ThisWorkbook.Sheets("F29")
 
@@ -405,7 +405,56 @@ Function ObtenerValorPorCodigoBinario(ByRef Lista As Collection, ByVal CodigoBus
     ObtenerValorPorCodigoBinario = -1
 End Function
 
-Function GetDataPdf(Dataset As String) As Collection
+Private Function PosicionAnioEnTexto(ByVal texto As String, ByVal yearObjetivo As Long) As Long
+    Dim yearStr As String
+    Dim i As Long
+    Dim prevChar As String, nextChar As String
+
+    yearStr = CStr(yearObjetivo)
+    For i = 1 To Len(texto) - Len(yearStr) + 1
+        If Mid$(texto, i, Len(yearStr)) = yearStr Then
+            If i > 1 Then prevChar = Mid$(texto, i - 1, 1) Else prevChar = ""
+            If i + Len(yearStr) <= Len(texto) Then
+                nextChar = Mid$(texto, i + Len(yearStr), 1)
+            Else
+                nextChar = ""
+            End If
+            If Not (Len(prevChar) > 0 And prevChar Like "[0-9]") _
+               And Not (Len(nextChar) > 0 And nextChar Like "[0-9]") Then
+                PosicionAnioEnTexto = i
+                Exit Function
+            End If
+        End If
+    Next i
+End Function
+
+Private Function DetectYearInText(ByVal texto As String) As Long
+    Dim i As Long, posible As Long
+    Dim fragmento As String
+    Dim prevChar As String, nextChar As String
+
+    For i = 1 To Len(texto) - 3
+        fragmento = Mid$(texto, i, 4)
+        If IsNumeric(fragmento) Then
+            If i > 1 Then prevChar = Mid$(texto, i - 1, 1) Else prevChar = ""
+            If i + 4 <= Len(texto) Then
+                nextChar = Mid$(texto, i + 4, 1)
+            Else
+                nextChar = ""
+            End If
+            If Not (Len(prevChar) > 0 And prevChar Like "[0-9]") _
+               And Not (Len(nextChar) > 0 And nextChar Like "[0-9]") Then
+                posible = CLng(fragmento)
+                If posible >= 1900 And posible <= 2100 Then
+                    DetectYearInText = posible
+                    Exit Function
+                End If
+            End If
+        End If
+    Next i
+End Function
+
+Function GetDataPdf(Dataset As String, Optional ByVal yearObjetivo As Long = 0) As Collection
     Dim texto As String, Bloques() As String
     Dim codigo As String, Descripcion As String, Valor As String
     Dim contenido As String
@@ -415,8 +464,16 @@ Function GetDataPdf(Dataset As String) As Collection
     Dim valueIdx As Long
     Dim miLista As Collection: Set miLista = New Collection
     Dim posicion As Long
+    Dim posYear As Long
+    Dim currentYear As Long
+    Dim detectedYear As Long
 
     texto = Dataset
+
+    If yearObjetivo <> 0 Then
+        posYear = PosicionAnioEnTexto(texto, yearObjetivo)
+        If posYear > 0 Then texto = Mid$(texto, posYear)  ' descarta declaraciones de años posteriores
+    End If
 
     ' 1) Localiza el encabezado (con/sin acento) y corta desde ahí
     posicion = InStr(1, texto, "Código Glosa Valor", vbTextCompare)
@@ -436,7 +493,16 @@ Function GetDataPdf(Dataset As String) As Collection
         Bloque = Application.Trim(Bloques(i))
         If Len(Bloque) = 0 Then GoTo SiguienteBloque
 
+        If yearObjetivo <> 0 Then
+            detectedYear = DetectYearInText(Bloque)
+            If detectedYear >= 1900 And detectedYear <= 2100 Then currentYear = detectedYear
+        End If
+
         If Not ParseBloqueCodigo(Bloque, codigo, contenido) Then GoTo SiguienteBloque
+
+        If yearObjetivo <> 0 Then
+            If currentYear <> 0 And currentYear <> yearObjetivo Then GoTo SiguienteBloque
+        End If
 
         tokens = Split(Application.Trim(contenido), " ")
         valueIdx = -1
@@ -444,6 +510,7 @@ Function GetDataPdf(Dataset As String) As Collection
         ' === Valor: desde el final busca el primer número REAL que no parezca código ===
         ' (ignora tokens numéricos de 3 dígitos para no capturar 151/596/048, etc.)
         Valor = ""
+        
         For k = UBound(tokens) To 0 Step -1
             Valor = FormatearNumero(tokens(k))
             If Valor <> "" And Valor <> "-" And IsNumeric(Valor) Then
@@ -484,8 +551,19 @@ Function GetDataPdf(Dataset As String) As Collection
         End If
 
         miLista.Add Array(miLista, codigo, Descripcion, Valor)
+
         ' Final de la primera declaración: evitar arrastrar meses/años posteriores
-        If codigo = "091" Then Exit For
+        If codigo = "091" Then
+            If yearObjetivo = 0 Then
+                Exit For
+            ElseIf currentYear = 0 Or currentYear = yearObjetivo Then
+                Exit For
+            Else
+                ' Reinicia el año actual cuando el primer total pertenece a otra declaración,
+                ' para que los siguientes bloques sin etiqueta de año no hereden el periodo equivocado.
+                currentYear = 0
+            End If
+        End If
 
 SiguienteBloque:
     Next i
@@ -493,10 +571,6 @@ SiguienteBloque:
     Set miLista = OrdenarListaConWorksheetFunction(miLista)
     Set GetDataPdf = miLista
 End Function
-
-
-
-
 
 Function OrdenarListaConWorksheetFunction(miLista As Collection) As Collection
     Dim ws As Worksheet, miLista2 As Collection, i As Long

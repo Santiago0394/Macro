@@ -484,6 +484,8 @@ Function GetDataPdf(Dataset As String) As Collection
         End If
 
         miLista.Add Array(miLista, codigo, Descripcion, Valor)
+        ' Final de la primera declaración: evitar arrastrar meses/años posteriores
+        If codigo = "091" Then Exit For
 
 SiguienteBloque:
     Next i

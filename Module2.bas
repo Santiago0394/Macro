@@ -557,6 +557,10 @@ Function GetDataPdf(Dataset As String, Optional ByVal yearObjetivo As Long = 0) 
                 Exit For
             ElseIf currentYear = 0 Or currentYear = yearObjetivo Then
                 Exit For
+            Else
+                ' Reinicia el año actual cuando el primer total pertenece a otra declaración,
+                ' para que los siguientes bloques sin etiqueta de año no hereden el periodo equivocado.
+                currentYear = 0
             End If
         End If
 

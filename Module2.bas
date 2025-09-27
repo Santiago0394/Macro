@@ -406,10 +406,13 @@ Function ObtenerValorPorCodigoBinario(ByRef Lista As Collection, ByVal CodigoBus
 End Function
 
 Function GetDataPdf(Dataset As String) As Collection
-    Dim texto As String, Bloques() As String, Lineas() As String
+    Dim texto As String, Bloques() As String
     Dim codigo As String, Descripcion As String, Valor As String
+    Dim contenido As String
     Dim i As Long, j As Long, k As Long
     Dim Bloque As String
+    Dim tokens() As String
+    Dim valueIdx As Long
     Dim miLista As Collection: Set miLista = New Collection
     Dim posicion As Long
 
@@ -433,36 +436,41 @@ Function GetDataPdf(Dataset As String) As Collection
         Bloque = Application.Trim(Bloques(i))
         If Len(Bloque) = 0 Then GoTo SiguienteBloque
 
-        Lineas = Split(Bloque, " ")
-        If UBound(Lineas) < 0 Then GoTo SiguienteBloque
+        If Not ParseBloqueCodigo(Bloque, codigo, contenido) Then GoTo SiguienteBloque
 
-        ' Primera palabra del bloque debe ser el código
-        If Not BuscarEnArray(Lineas(0)) Then GoTo SiguienteBloque
-        codigo = Format$(CLng(Lineas(0)), "000")
+        tokens = Split(Application.Trim(contenido), " ")
+        valueIdx = -1
 
         ' === Valor: desde el final busca el primer número REAL que no parezca código ===
         ' (ignora tokens numéricos de 3 dígitos para no capturar 151/596/048, etc.)
         Valor = ""
-        For k = UBound(Lineas) To 1 Step -1
-            Valor = FormatearNumero(Lineas(k))
+        For k = UBound(tokens) To 0 Step -1
+            Valor = FormatearNumero(tokens(k))
             If Valor <> "" And Valor <> "-" And IsNumeric(Valor) Then
                 If Len(Valor) > 3 Then Exit For
             End If
         Next k
+        If Valor <> "" And IsNumeric(Valor) Then valueIdx = k
 
         ' Si aún no encontró (casos raros con montos muy pequeños), repite sin la regla de >3
         If Valor = "" Or Not IsNumeric(Valor) Then
-            For k = UBound(Lineas) To 1 Step -1
-                Valor = FormatearNumero(Lineas(k))
-                If Valor <> "" And Valor <> "-" And IsNumeric(Valor) Then Exit For
+            For k = UBound(tokens) To 0 Step -1
+                Valor = FormatearNumero(tokens(k))
+                If Valor <> "" And Valor <> "-" And IsNumeric(Valor) Then
+                    valueIdx = k
+                    Exit For
+                End If
             Next k
         End If
 
         ' Descripción = tokens intermedios
         Descripcion = ""
-        If UBound(Lineas) > 1 Then
-            For j = 1 To UBound(Lineas) - 1
-                Descripcion = Descripcion & Lineas(j) & " "
+        If UBound(tokens) >= 0 Then
+            If valueIdx = -1 Then valueIdx = UBound(tokens) + 1
+            For j = 0 To valueIdx - 1
+                If Len(tokens(j)) > 0 Then
+                    Descripcion = Descripcion & tokens(j) & " "
+                End If
             Next j
             Descripcion = Trim$(Descripcion)
         End If
@@ -470,8 +478,8 @@ Function GetDataPdf(Dataset As String) As Collection
 
         ' Caso 091 tolerante (si faltara un token de valor)
         If CLng(codigo) = 91 And (Valor = "" Or Not IsNumeric(Valor)) Then
-            If UBound(Lineas) >= 1 Then
-                Valor = FormatearNumero(Lineas(1))
+            If UBound(tokens) >= 0 Then
+                Valor = FormatearNumero(tokens(UBound(tokens)))
             End If
         End If
 
@@ -525,6 +533,33 @@ Function OrdenarListaConWorksheetFunction(miLista As Collection) As Collection
 
     ws.Cells.ClearContents
     Set OrdenarListaConWorksheetFunction = miLista2
+End Function
+
+Private Function ParseBloqueCodigo(ByVal Bloque As String, ByRef codigo As String, ByRef contenido As String) As Boolean
+    Dim regex As Object, matches As Object
+    Dim codigoRaw As String
+
+    Bloque = Trim$(Bloque)
+    If Len(Bloque) = 0 Then Exit Function
+
+    Set regex = CreateObject("VBScript.RegExp")
+    With regex
+        .Global = False
+        .IgnoreCase = True
+        .Pattern = "^\s*(\d{1,3})(?:\s*[-:–—]?\s*)(.*)$"
+    End With
+
+    If Not regex.Test(Bloque) Then Exit Function
+
+    Set matches = regex.Execute(Bloque)
+    If matches.Count = 0 Then Exit Function
+
+    codigoRaw = matches(0).SubMatches(0)
+    If Not BuscarEnArray(codigoRaw) Then Exit Function
+
+    codigo = Format$(CLng(codigoRaw), "000")
+    contenido = Application.Trim(matches(0).SubMatches(1))
+    ParseBloqueCodigo = True
 End Function
 
 Function FormatearNumero(ByVal Valor As String) As String

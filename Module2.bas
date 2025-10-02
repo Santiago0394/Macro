@@ -2728,12 +2728,13 @@ Function LeerCarpetasPoranio(rutaBase, ByVal tipo As Integer, modo As Integer, N
                 
                 
                 If modo > 0 Then
-                    If i = 0 Then
-                        posicion = ObtenerFilaInicioDesdeHoja(anio)
+                    posicion = ObtenerFilaInicioDesdeHoja(anio)
+                    If posicion <= 0 Then
+                        Logger "E", "Archivos", "No se encontr el ao " & anio & " en la hoja 'Archivos'."
+                    Else
+                        ' Llamar a la funcin LeerArchivos con el ao como parmetro
+                        Call LeerArchivos(anio, tipo, posicion)
                     End If
-                    ' Llamar a la funci�n LeerArchivos con el a�o como par�metro
-                    Call LeerArchivos(anio, tipo, posicion)
-                    posicion = posicion + 13
                 End If
             End If
             i = i + 1
@@ -2850,9 +2851,9 @@ Sub LeerArchivos(ByVal yearInput As Long, ByVal tipo As Integer, ByVal posicion 
 
 End Sub
 
-Function ObtenerFilaInicioDesdeHoja(ByVal A�oBuscado As Long) As Long
+Public Function ObtenerFilaInicioDesdeHoja(ByVal AnioBuscado As Long) As Long
     Dim ws As Worksheet
-    Dim PrimerA�o As Long
+    Dim PrimerAnio As Long
     Dim FilaBase As Long
     Dim PosicionRelativa As Long
 
@@ -2866,19 +2867,19 @@ Function ObtenerFilaInicioDesdeHoja(ByVal A�oBuscado As Long) As Long
     End If
     On Error GoTo 0
 
-    ' Obtener el PrimerA�o desde la celda A2
-    PrimerA�o = ws.Cells(2, 1).value
-    If Not IsNumeric(PrimerA�o) Or PrimerA�o = 0 Then
-        MsgBox "No se encontr� un a�o v�lido en la celda A2.", vbCritical
+    ' Obtener el PrimerAnio desde la celda A2
+    PrimerAnio = ws.Cells(2, 1).Value
+    If Not IsNumeric(PrimerAnio) Or PrimerAnio = 0 Then
+        MsgBox "No se encontr un ao vlido en la celda A2.", vbCritical
         ObtenerFilaInicioDesdeHoja = -1
         Exit Function
     End If
 
-    ' Fila inicial del PrimerA�o
+    ' Fila inicial del PrimerAnio
     FilaBase = 2
 
-    ' Calcular la posici�n relativa (diferencia en a�os)
-    PosicionRelativa = A�oBuscado - PrimerA�o
+    ' Calcular la posicin relativa (diferencia en aos)
+    PosicionRelativa = AnioBuscado - PrimerAnio
 
     ' Calcular la fila de inicio
     ObtenerFilaInicioDesdeHoja = FilaBase + PosicionRelativa * 13

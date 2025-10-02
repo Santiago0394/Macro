@@ -983,6 +983,64 @@ Private Sub LimitesBloqueF29(ByVal year As Long, ByRef startRow As Long, ByRef e
     If endRow = 0 Then endRow = lastRow
 End Sub
 
+Private Function CaptureAutoFilterState(ws As Worksheet, ByRef filterRange As Range) As Collection
+    Dim states As Collection
+    Dim i As Long
+    Dim entry As Variant
+
+    Set filterRange = Nothing
+
+    If ws Is Nothing Then Exit Function
+    If Not ws.AutoFilterMode Then Exit Function
+
+    Set filterRange = ws.AutoFilter.Range
+    Set states = New Collection
+
+    With ws.AutoFilter
+        For i = 1 To .Filters.Count
+            If .Filters(i).On Then
+                ReDim entry(0 To 3)
+                entry(0) = i
+                entry(1) = .Filters(i).Criteria1
+                entry(2) = .Filters(i).Operator
+                If entry(2) = xlAnd Or entry(2) = xlOr Then
+                    entry(3) = .Filters(i).Criteria2
+                Else
+                    entry(3) = Empty
+                End If
+                states.Add entry
+            End If
+        Next i
+    End With
+
+    If ws.FilterMode Then
+        On Error Resume Next
+        ws.ShowAllData
+        On Error GoTo 0
+    End If
+
+    Set CaptureAutoFilterState = states
+End Function
+
+Private Sub RestoreAutoFilterState(ws As Worksheet, ByVal filterRange As Range, ByVal states As Collection)
+    Dim entry As Variant
+
+    If ws Is Nothing Then Exit Sub
+    If states Is Nothing Then Exit Sub
+    If states.Count = 0 Then Exit Sub
+    If filterRange Is Nothing Then Exit Sub
+
+    For Each entry In states
+        If IsEmpty(entry(2)) Or entry(2) = 0 Then
+            filterRange.AutoFilter Field:=entry(0), Criteria1:=entry(1)
+        ElseIf entry(2) = xlAnd Or entry(2) = xlOr Then
+            filterRange.AutoFilter Field:=entry(0), Criteria1:=entry(1), Operator:=entry(2), Criteria2:=entry(3)
+        Else
+            filterRange.AutoFilter Field:=entry(0), Criteria1:=entry(1), Operator:=entry(2)
+        End If
+    Next entry
+End Sub
+
 Private Sub EnsureFilaCodigoEnF29(ByVal year As Long, ByVal code As String, ByVal GLOSA As String, _
                                   Optional ByVal preferAfterCode As String = "020", _
                                   Optional ByVal fallbackBeforeCode As String = "142")
@@ -1085,7 +1143,6 @@ Public Sub CorrigeMesesFuturosF29(ByVal year As Long)
 End Sub
 
 Sub Boton_F29_fom()
-    
     Dim ws As Worksheet
     Dim startYear As Long
     Dim endYear As Long
@@ -1095,27 +1152,32 @@ Sub Boton_F29_fom()
     Dim yearInt As Long
     Dim CountYear As Integer
     Dim wsDest As Worksheet
-    
+
+    Dim filterState As Collection
+    Dim filterRange As Range
+    Dim errMsg As String
+
+    On Error GoTo CleanFail
+
+    ' Definir la hoja de trabajo y resguardar filtros activos (si existen)
+    Set ws = ThisWorkbook.Sheets("F29")
+    Set filterState = CaptureAutoFilterState(ws, filterRange)
     
     Call LimpiarValores(3)
     Call LimpiaFormatea(3)
-    
-    ' Definir la hoja de trabajo
-    Set ws = ThisWorkbook.Sheets("F29")
     
     ' Leer los valores de los a�os
     startYear = ws.Range("G2").value
     endYear = ws.Range("I2").value
     
     ' Calcular la diferencia de a�os (n�mero de replicaciones)
-     yearDiff = endYear - startYear
-    
-     
-     ' Verificar que la diferencia de a�os sea mayor que 0
-     If yearDiff < 0 Then
-         MsgBox "El valor de a�o final debe ser mayor o igual que el de inicio.", vbExclamation
-         Exit Sub
-     End If
+    yearDiff = endYear - startYear
+
+    ' Verificar que la diferencia de a�os sea mayor que 0
+    If yearDiff < 0 Then
+        MsgBox "El valor de a�o final debe ser mayor o igual que el de inicio.", vbExclamation
+        GoTo CleanExit
+    End If
     
     If Not Validaryear(startYear, "C") Or Not Validaryear(endYear, "C") Then
     
@@ -1152,6 +1214,16 @@ Sub Boton_F29_fom()
     
     ' <<< limpia meses sin CSV en el �LTIMO a�o (p.ej. 2025)
     Call CorrigeMesesFuturosF29(endYear)
+CleanExit:
+    On Error Resume Next
+    RestoreAutoFilterState ws, filterRange, filterState
+    On Error GoTo 0
+    Exit Sub
+
+CleanFail:
+    errMsg = Err.Description
+    MsgBox "Se produjo un error durante la actualizaci�n: " & errMsg, vbCritical
+    Resume CleanExit
  
 End Sub
 Function Validaryear(ByVal yearBuscado As Long, ByVal Col As String) As Boolean

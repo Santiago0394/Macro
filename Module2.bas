@@ -2187,14 +2187,14 @@ End Sub
 
 Private Sub ResetEstructuraBaseF29()
     Const TEMPLATE_SHEET_NAME As String = "__F29_PLANTILLA"
-    Const TEMPLATE_LAST_COL As String = "O"
-    Const TEMPLATE_LAST_ROW As Long = 60
-
-    Dim templateRange As String
-    templateRange = "A1:" & TEMPLATE_LAST_COL & TEMPLATE_LAST_ROW
 
     Dim wsF29 As Worksheet
     Dim wsTemplate As Worksheet
+    Dim lastRowPlantilla As Long
+    Dim lastColPlantilla As Long
+    Dim lastRowF29 As Long
+    Dim lastColF29 As Long
+    Dim srcRange As Range
 
     Set wsF29 = ThisWorkbook.Sheets("F29")
 
@@ -2205,27 +2205,66 @@ Private Sub ResetEstructuraBaseF29()
     Application.ScreenUpdating = False
 
     If wsTemplate Is Nothing Then
-        wsF29.Range(templateRange).Copy
         Set wsTemplate = ThisWorkbook.Sheets.Add(After:=wsF29)
         wsTemplate.Name = TEMPLATE_SHEET_NAME
-        wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteAll
-        wsTemplate.Visible = xlSheetVeryHidden
-    Else
-        Dim lastRow As Long
-        lastRow = wsF29.Cells(wsF29.Rows.Count, "A").End(xlUp).Row
 
-        If lastRow > TEMPLATE_LAST_ROW Then
-            wsF29.Rows(TEMPLATE_LAST_ROW + 1 & ":" & lastRow).Delete
+        Set srcRange = wsF29.UsedRange
+        If Not srcRange Is Nothing Then
+            srcRange.Copy
+            wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteAll
+            wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteColumnWidths
         End If
 
-        wsTemplate.Range(templateRange).Copy
+        wsTemplate.Visible = xlSheetVeryHidden
+    Else
+        lastRowPlantilla = UltimaFilaUsada(wsTemplate)
+        lastColPlantilla = UltimaColumnaUsada(wsTemplate)
+
+        If lastRowPlantilla = 0 Or lastColPlantilla = 0 Then GoTo Salida
+
+        lastRowF29 = UltimaFilaUsada(wsF29)
+        If lastRowF29 > lastRowPlantilla Then
+            wsF29.Rows(lastRowPlantilla + 1 & ":" & lastRowF29).Delete
+        End If
+
+        lastColF29 = UltimaColumnaUsada(wsF29)
+        If lastColF29 > lastColPlantilla Then
+            wsF29.Range(wsF29.Cells(1, lastColPlantilla + 1), _
+                        wsF29.Cells(lastRowPlantilla, lastColF29)).Clear
+        End If
+
+        wsTemplate.Range(wsTemplate.Cells(1, 1), _
+                         wsTemplate.Cells(lastRowPlantilla, lastColPlantilla)).Copy
         wsF29.Range("A1").PasteSpecial Paste:=xlPasteAll
+        wsF29.Range("A1").PasteSpecial Paste:=xlPasteColumnWidths
     End If
 
+Salida:
     Application.CutCopyMode = False
     Application.ScreenUpdating = True
 End Sub
 
+Private Function UltimaFilaUsada(ByVal ws As Worksheet) As Long
+    Dim rng As Range
+    Set rng = ws.Cells.Find(What:="*", LookIn:=xlFormulas, _
+                            SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+    If rng Is Nothing Then
+        UltimaFilaUsada = 0
+    Else
+        UltimaFilaUsada = rng.Row
+    End If
+End Function
+
+Private Function UltimaColumnaUsada(ByVal ws As Worksheet) As Long
+    Dim rng As Range
+    Set rng = ws.Cells.Find(What:="*", LookIn:=xlFormulas, _
+                            SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
+    If rng Is Nothing Then
+        UltimaColumnaUsada = 0
+    Else
+        UltimaColumnaUsada = rng.Column
+    End If
+End Function
 
 Sub LimpiaFormatea(NumeroHoja As Integer)
     Dim ws As Worksheet

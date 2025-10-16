@@ -2187,7 +2187,11 @@ End Sub
 
 Private Sub ResetEstructuraBaseF29()
     Const TEMPLATE_SHEET_NAME As String = "__F29_PLANTILLA"
-    Const TEMPLATE_RANGE As String = "A1:N60"
+    Const TEMPLATE_LAST_COL As String = "O"
+    Const TEMPLATE_LAST_ROW As Long = 60
+
+    Dim templateRange As String
+    templateRange = "A1:" & TEMPLATE_LAST_COL & TEMPLATE_LAST_ROW
 
     Dim wsF29 As Worksheet
     Dim wsTemplate As Worksheet
@@ -2201,13 +2205,20 @@ Private Sub ResetEstructuraBaseF29()
     Application.ScreenUpdating = False
 
     If wsTemplate Is Nothing Then
-        wsF29.Range(TEMPLATE_RANGE).Copy
+        wsF29.Range(templateRange).Copy
         Set wsTemplate = ThisWorkbook.Sheets.Add(After:=wsF29)
         wsTemplate.Name = TEMPLATE_SHEET_NAME
         wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteAll
         wsTemplate.Visible = xlSheetVeryHidden
     Else
-        wsTemplate.Range(TEMPLATE_RANGE).Copy
+        Dim lastRow As Long
+        lastRow = wsF29.Cells(wsF29.Rows.Count, "A").End(xlUp).Row
+
+        If lastRow > TEMPLATE_LAST_ROW Then
+            wsF29.Rows(TEMPLATE_LAST_ROW + 1 & ":" & lastRow).Delete
+        End If
+
+        wsTemplate.Range(templateRange).Copy
         wsF29.Range("A1").PasteSpecial Paste:=xlPasteAll
     End If
 

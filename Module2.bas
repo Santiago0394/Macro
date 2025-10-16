@@ -2190,10 +2190,6 @@ Private Sub ResetEstructuraBaseF29()
 
     Dim wsF29 As Worksheet
     Dim wsTemplate As Worksheet
-    Dim lastRowPlantilla As Long
-    Dim lastColPlantilla As Long
-    Dim lastRowF29 As Long
-    Dim lastColF29 As Long
     Dim srcRange As Range
 
     Set wsF29 = ThisWorkbook.Sheets("F29")
@@ -2204,6 +2200,7 @@ Private Sub ResetEstructuraBaseF29()
 
     Application.ScreenUpdating = False
 
+    ' Si no existe, la creamos tomando un “snapshot” tal cual está F29 ahora mismo.
     If wsTemplate Is Nothing Then
         Set wsTemplate = ThisWorkbook.Sheets.Add(After:=wsF29)
         wsTemplate.Name = TEMPLATE_SHEET_NAME
@@ -2217,31 +2214,49 @@ Private Sub ResetEstructuraBaseF29()
 
         wsTemplate.Visible = xlSheetVeryHidden
     Else
-        lastRowPlantilla = UltimaFilaUsada(wsTemplate)
-        lastColPlantilla = UltimaColumnaUsada(wsTemplate)
-
-        If lastRowPlantilla = 0 Or lastColPlantilla = 0 Then GoTo Salida
-
-        lastRowF29 = UltimaFilaUsada(wsF29)
-        If lastRowF29 > lastRowPlantilla Then
-            wsF29.Rows(lastRowPlantilla + 1 & ":" & lastRowF29).Delete
+        ' Si ya existe, la refrescamos en memoria con el estado actual de F29
+        ' únicamente cuando la plantilla esté vacía (p.ej. eliminada manualmente).
+        If UltimaFilaUsada(wsTemplate) = 0 Or UltimaColumnaUsada(wsTemplate) = 0 Then
+            Set srcRange = wsF29.UsedRange
+            If Not srcRange Is Nothing Then
+                wsTemplate.Cells.Clear
+                srcRange.Copy
+                wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteAll
+                wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteColumnWidths
+            End If
         End If
-
-        lastColF29 = UltimaColumnaUsada(wsF29)
-        If lastColF29 > lastColPlantilla Then
-            wsF29.Range(wsF29.Cells(1, lastColPlantilla + 1), _
-                        wsF29.Cells(lastRowPlantilla, lastColF29)).Clear
-        End If
-
-        wsTemplate.Range(wsTemplate.Cells(1, 1), _
-                         wsTemplate.Cells(lastRowPlantilla, lastColPlantilla)).Copy
-        wsF29.Range("A1").PasteSpecial Paste:=xlPasteAll
-        wsF29.Range("A1").PasteSpecial Paste:=xlPasteColumnWidths
     End If
 
-Salida:
+    ' Dejamos F29 limpio utilizando SIEMPRE la plantilla oculta.
+    If Not wsTemplate Is Nothing Then
+        Call RestaurarDesdePlantillaF29(wsF29, wsTemplate)
+    End If
+
     Application.CutCopyMode = False
     Application.ScreenUpdating = True
+End Sub
+
+Private Sub RestaurarDesdePlantillaF29(ByVal wsF29 As Worksheet, ByVal wsTemplate As Worksheet)
+    Dim lastRowPlantilla As Long
+    Dim lastColPlantilla As Long
+
+    lastRowPlantilla = UltimaFilaUsada(wsTemplate)
+    lastColPlantilla = UltimaColumnaUsada(wsTemplate)
+
+    If lastRowPlantilla = 0 Or lastColPlantilla = 0 Then Exit Sub
+
+    ' Limpiamos todo para evitar residuos de ejecuciones anteriores
+    wsF29.Cells.Clear
+
+    On Error Resume Next
+    wsF29.DrawingObjects.Delete
+    On Error GoTo 0
+
+    wsTemplate.Range(wsTemplate.Cells(1, 1), _
+                     wsTemplate.Cells(lastRowPlantilla, lastColPlantilla)).Copy
+
+    wsF29.Range("A1").PasteSpecial Paste:=xlPasteAll
+    wsF29.Range("A1").PasteSpecial Paste:=xlPasteColumnWidths
 End Sub
 
 Private Function UltimaFilaUsada(ByVal ws As Worksheet) As Long
@@ -2265,6 +2280,8 @@ Private Function UltimaColumnaUsada(ByVal ws As Worksheet) As Long
         UltimaColumnaUsada = rng.Column
     End If
 End Function
+
+
 
 Sub LimpiaFormatea(NumeroHoja As Integer)
     Dim ws As Worksheet

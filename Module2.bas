@@ -108,99 +108,6 @@ Private Sub EnsureFilaTasaPPM(ByVal year As Long)
     Application.ScreenUpdating = True
 End Sub
 
-Private Sub ResetFilasEspecialesF29(ByVal year As Long)
-    Dim ws As Worksheet
-    Dim startRow As Long, endRow As Long
-    Dim r As Long
-    Dim rawLabel As String
-    Dim labelKey As String
-    Dim codeKey As String
-    Dim valueB As Variant
-    Dim deleteRow As Boolean
-    Dim targetLabels As Object
-    Dim targetCodes As Object
-    Dim seenLabels As Object
-    Dim seenCodes As Object
-
-    If year < 2023 Or year > 2025 Then Exit Sub
-
-    Set ws = ThisWorkbook.Sheets("F29")
-    Call LimitesBloqueF29(year, startRow, endRow)
-    If startRow = 0 Or endRow = 0 Then Exit Sub
-
-    Set targetLabels = CreateObject("Scripting.Dictionary")
-    targetLabels.CompareMode = vbTextCompare
-    targetLabels("TASA PPM") = True
-    targetLabels("IMPUESTO A PAGAR") = True
-
-    Set targetCodes = CreateObject("Scripting.Dictionary")
-    targetCodes.CompareMode = vbTextCompare
-    targetCodes("091") = True
-    targetCodes("049") = True
-    targetCodes("048") = True
-    targetCodes("703") = True
-    targetCodes("810") = True
-
-    Set seenLabels = CreateObject("Scripting.Dictionary")
-    seenLabels.CompareMode = vbTextCompare
-    Set seenCodes = CreateObject("Scripting.Dictionary")
-    seenCodes.CompareMode = vbTextCompare
-
-    Application.ScreenUpdating = False
-
-    For r = endRow To startRow + 1 Step -1
-        deleteRow = False
-        rawLabel = Trim$(CStr(ws.Cells(r, "A").value))
-        labelKey = UCase$(rawLabel)
-        valueB = ws.Cells(r, "B").value
-        codeKey = ""
-
-        If targetLabels.Exists(labelKey) Then
-            If seenLabels.Exists(labelKey) Then
-                deleteRow = True
-            Else
-                seenLabels(labelKey) = True
-            End If
-        End If
-
-        If Not deleteRow Then
-            If Len(Trim$(CStr(valueB))) > 0 And IsNumeric(valueB) Then
-                codeKey = Format$(CLng(valueB), "000")
-            ElseIf Len(rawLabel) > 0 And IsNumeric(rawLabel) Then
-                codeKey = Format$(CLng(rawLabel), "000")
-            End If
-
-            If Len(codeKey) > 0 Then
-                If targetCodes.Exists(codeKey) Then
-                    If seenCodes.Exists(codeKey) Then
-                        deleteRow = True
-                    Else
-                        seenCodes(codeKey) = True
-                    End If
-                End If
-            End If
-        End If
-
-        If deleteRow Then
-            ws.Rows(r).Delete
-        End If
-    Next r
-
-    Application.ScreenUpdating = True
-End Sub
-
-Private Function EsCodigoObjetivo(ByVal valor As Variant, ByVal lista As Variant) As Boolean
-    Dim item As Variant
-
-    If IsNumeric(valor) Then
-        For Each item In lista
-            If CLng(valor) = CLng(item) Then
-                EsCodigoObjetivo = True
-                Exit Function
-            End If
-        Next item
-    End If
-End Function
 
 
 Private Sub EnsureFilaCodigo091_DebajoImpuestoAPagar(ByVal year As Long)
@@ -1234,9 +1141,6 @@ Sub Boton_F29_fom()
        CountYear = 1
        For i = 0 To yearDiff
            yearInt = startYear + i
-
-            ' Limpia filas especiales antes de reconstruir el bloque del anio
-           Call ResetFilasEspecialesF29(yearInt)
        
            Call ProcesarF29(yearInt, positionRow, CountYear)
            ' Despu�s de cada a�o, incrementamos positionRow en 19 (para el siguiente a�o)

@@ -108,6 +108,64 @@ Private Sub EnsureFilaTasaPPM(ByVal year As Long)
     Application.ScreenUpdating = True
 End Sub
 
+Private Sub ResetFilasEspecialesF29(ByVal year As Long)
+    Dim ws As Worksheet
+    Dim startRow As Long, endRow As Long
+    Dim r As Long
+    Dim codes As Variant
+    Dim textA As String
+    Dim valueB As Variant
+
+    If year < 2023 Or year > 2025 Then Exit Sub
+
+    Set ws = ThisWorkbook.Sheets("F29")
+    Call LimitesBloqueF29(year, startRow, endRow)
+    If startRow = 0 Or endRow = 0 Then Exit Sub
+
+    codes = Array(62, 123, 703, 48, 151, 596, 810, 49, 91)
+
+    Application.ScreenUpdating = False
+
+    For r = endRow To startRow + 1 Step -1
+        Dim deleteRow As Boolean
+
+        textA = Trim$(CStr(ws.Cells(r, "A").value))
+        valueB = ws.Cells(r, "B").value
+
+        If Len(textA) > 0 Then
+            If UCase$(textA) = "IMPUESTO A PAGAR" Or UCase$(textA) = "TASA PPM" Then
+                deleteRow = True
+            End If
+        End If
+
+        If Not deleteRow Then
+            If EsCodigoObjetivo(valueB, codes) Then
+                deleteRow = True
+            ElseIf Len(textA) > 0 And IsNumeric(textA) Then
+                If EsCodigoObjetivo(CLng(textA), codes) Then deleteRow = True
+            End If
+        End If
+
+        If deleteRow Then
+            ws.Rows(r).Delete
+        End If
+    Next r
+
+    Application.ScreenUpdating = True
+End Sub
+
+Private Function EsCodigoObjetivo(ByVal valor As Variant, ByVal lista As Variant) As Boolean
+    Dim item As Variant
+
+    If IsNumeric(valor) Then
+        For Each item In lista
+            If CLng(valor) = CLng(item) Then
+                EsCodigoObjetivo = True
+                Exit Function
+            End If
+        Next item
+    End If
+End Function
 
 
 Private Sub EnsureFilaCodigo091_DebajoImpuestoAPagar(ByVal year As Long)
@@ -1141,6 +1199,9 @@ Sub Boton_F29_fom()
        CountYear = 1
        For i = 0 To yearDiff
            yearInt = startYear + i
+
+            ' Limpia filas especiales antes de reconstruir el bloque del anio
+           Call ResetFilasEspecialesF29(yearInt)
        
            Call ProcesarF29(yearInt, positionRow, CountYear)
            ' Despu�s de cada a�o, incrementamos positionRow en 19 (para el siguiente a�o)

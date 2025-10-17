@@ -112,9 +112,15 @@ Private Sub ResetFilasEspecialesF29(ByVal year As Long)
     Dim ws As Worksheet
     Dim startRow As Long, endRow As Long
     Dim r As Long
-    Dim codes As Variant
-    Dim textA As String
+    Dim rawLabel As String
+    Dim labelKey As String
+    Dim codeKey As String
     Dim valueB As Variant
+    Dim deleteRow As Boolean
+    Dim targetLabels As Object
+    Dim targetCodes As Object
+    Dim seenLabels As Object
+    Dim seenCodes As Object
 
     If year < 2023 Or year > 2025 Then Exit Sub
 
@@ -122,27 +128,56 @@ Private Sub ResetFilasEspecialesF29(ByVal year As Long)
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    codes = Array(62, 123, 703, 48, 151, 596, 810, 49, 91)
+    Set targetLabels = CreateObject("Scripting.Dictionary")
+    targetLabels.CompareMode = vbTextCompare
+    targetLabels("TASA PPM") = True
+    targetLabels("IMPUESTO A PAGAR") = True
+
+    Set targetCodes = CreateObject("Scripting.Dictionary")
+    targetCodes.CompareMode = vbTextCompare
+    targetCodes("091") = True
+    targetCodes("049") = True
+    targetCodes("048") = True
+    targetCodes("703") = True
+    targetCodes("810") = True
+
+    Set seenLabels = CreateObject("Scripting.Dictionary")
+    seenLabels.CompareMode = vbTextCompare
+    Set seenCodes = CreateObject("Scripting.Dictionary")
+    seenCodes.CompareMode = vbTextCompare
 
     Application.ScreenUpdating = False
 
     For r = endRow To startRow + 1 Step -1
-        Dim deleteRow As Boolean
-
-        textA = Trim$(CStr(ws.Cells(r, "A").value))
+        deleteRow = False
+        rawLabel = Trim$(CStr(ws.Cells(r, "A").value))
+        labelKey = UCase$(rawLabel)
         valueB = ws.Cells(r, "B").value
+        codeKey = ""
 
-        If Len(textA) > 0 Then
-            If UCase$(textA) = "IMPUESTO A PAGAR" Or UCase$(textA) = "TASA PPM" Then
+        If targetLabels.Exists(labelKey) Then
+            If seenLabels.Exists(labelKey) Then
                 deleteRow = True
+            Else
+                seenLabels(labelKey) = True
             End If
         End If
 
         If Not deleteRow Then
-            If EsCodigoObjetivo(valueB, codes) Then
-                deleteRow = True
-            ElseIf Len(textA) > 0 And IsNumeric(textA) Then
-                If EsCodigoObjetivo(CLng(textA), codes) Then deleteRow = True
+            If Len(Trim$(CStr(valueB))) > 0 And IsNumeric(valueB) Then
+                codeKey = Format$(CLng(valueB), "000")
+            ElseIf Len(rawLabel) > 0 And IsNumeric(rawLabel) Then
+                codeKey = Format$(CLng(rawLabel), "000")
+            End If
+
+            If Len(codeKey) > 0 Then
+                If targetCodes.Exists(codeKey) Then
+                    If seenCodes.Exists(codeKey) Then
+                        deleteRow = True
+                    Else
+                        seenCodes(codeKey) = True
+                    End If
+                End If
             End If
         End If
 

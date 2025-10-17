@@ -1,9 +1,9 @@
-' Devuelve s si no está vacío; en caso contrario, fallback
+' Devuelve s si no est� vac�o; en caso contrario, fallback
 Private Function NzText(ByVal s As String, ByVal fallback As String) As String
     If Len(Trim$(CStr(s))) > 0 Then NzText = Trim$(CStr(s)) Else NzText = fallback
 End Function
 
-' Limpia espacios extras y los padding que ponemos al armar la descripción
+' Limpia espacios extras y los padding que ponemos al armar la descripci�n
 Private Function SanitizeGlosa(ByVal s As String) As String
     Dim t As String
     t = Trim$(CStr(s))
@@ -15,7 +15,7 @@ Private Function SanitizeGlosa(ByVal s As String) As String
     SanitizeGlosa = t
 End Function
 
-' Busca en las cadenas del sheet "dataset" la glosa del código indicado para ese año
+' Busca en las cadenas del sheet "dataset" la glosa del c�digo indicado para ese a�o
 Private Function GlosaDesdeDatasetPorCodigo(ByVal year As Long, ByVal codeNum As Long) As String
     Dim wsFiles As Worksheet, wsData As Worksheet
     Dim pos As Long, m As Long, dataStr As String
@@ -44,7 +44,7 @@ salir:
 End Function
 
 
-' === Inserta/ubica "Tasa PPM" y calcula por CÓDIGOS (numerador = 062) ===
+' === Inserta/ubica "Tasa PPM" y calcula por C�DIGOS (numerador = 062) ===
 Private Sub EnsureFilaTasaPPM(ByVal year As Long)
     If year < 2023 Then Exit Sub
 
@@ -55,18 +55,18 @@ Private Sub EnsureFilaTasaPPM(ByVal year As Long)
     Dim r091 As Long, r062 As Long, r020 As Long, r142 As Long, r715 As Long, r538 As Long
     Dim rowTasa As Long, targetRow As Long
 
-    ' Bloque del año
+    ' Bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' Filas por CÓDIGO
+    ' Filas por C�DIGO
     r091 = FindRowByYearAndCode(year, "091")         ' para UBICAR debajo de 091
     r062 = FindRowByYearAndCode(year, "062")         ' <-- NUMERADOR correcto
     r020 = FindRowByYearAndCode(year, "020")
     r142 = FindRowByYearAndCode(year, "142")
     r715 = FindRowByYearAndCode(year, "715")
     r538 = FindRowByYearAndCode(year, "538")
-    If r538 = 0 Then r538 = FindRowByYearAndLabel(year, "Total débitos")
+    If r538 = 0 Then r538 = FindRowByYearAndLabel(year, "Total d�bitos")
 
     ' Si falta alguno, no hacemos nada
     If r091 = 0 Or r062 = 0 Or r020 = 0 Or r142 = 0 Or r715 = 0 Or r538 = 0 Then Exit Sub
@@ -74,7 +74,7 @@ Private Sub EnsureFilaTasaPPM(ByVal year As Long)
     ' Debajo del 091
     targetRow = r091 + 1
 
-    ' ¿Ya existe "Tasa PPM"?
+    ' �Ya existe "Tasa PPM"?
     rowTasa = 0
     For r = startRow + 1 To endRow
         If UCase$(Trim$(CStr(ws.Cells(r, "A").value))) = UCase$(LABEL_TASA) Then
@@ -99,7 +99,7 @@ Private Sub EnsureFilaTasaPPM(ByVal year As Long)
         rowTasa = targetRow
     End If
 
-    ' Fórmula por CÓDIGOS: 062 / (020 + 142 + 715 + 538/19)
+    ' F�rmula por C�DIGOS: 062 / (020 + 142 + 715 + 538/19)
     For c = 3 To 14
         ws.Cells(rowTasa, c).FormulaR1C1 = _
             "=IFERROR(R" & r062 & "C/(R" & r020 & "C+R" & r142 & "C+R" & r715 & "C+R" & r538 & "C/19),0)"
@@ -119,21 +119,21 @@ Private Sub EnsureFilaCodigo091_DebajoImpuestoAPagar(ByVal year As Long)
     Dim r As Long, rowImp As Long, row091 As Long
     Dim lastCodeRow As Long, targetRow As Long
 
-    ' Bloque del año
+    ' Bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' Normaliza formato de códigos en el bloque
+    ' Normaliza formato de c�digos en el bloque
     ws.Range(ws.Cells(startRow + 1, "B"), ws.Cells(endRow, "B")).NumberFormat = "000"
 
-    ' Localiza "Impuesto a Pagar", una fila 091 (si existe) y el último renglón con código
+    ' Localiza "Impuesto a Pagar", una fila 091 (si existe) y el �ltimo rengl�n con c�digo
     For r = startRow + 1 To endRow
         If UCase$(Trim$(CStr(ws.Cells(r, "A").value))) = UCase$(LABEL_TARGET) Then rowImp = r
         If Val(ws.Cells(r, "B").value) = 91 Then row091 = r
         If IsNumeric(ws.Cells(r, "B").value) Then lastCodeRow = r
     Next r
 
-    ' Debajo de “Impuesto a Pagar”; si no existiera, al final de los códigos
+    ' Debajo de �Impuesto a Pagar�; si no existiera, al final de los c�digos
     If rowImp > 0 Then
         targetRow = rowImp + 1
     ElseIf lastCodeRow > 0 Then
@@ -145,7 +145,7 @@ Private Sub EnsureFilaCodigo091_DebajoImpuestoAPagar(ByVal year As Long)
     Application.ScreenUpdating = False
 
     If row091 > 0 Then
-        ' Mover si no está en la posición correcta
+        ' Mover si no est� en la posici�n correcta
         If row091 <> targetRow Then
             ws.Rows(row091).Cut
             ws.Rows(targetRow).Insert Shift:=xlDown
@@ -154,12 +154,12 @@ Private Sub EnsureFilaCodigo091_DebajoImpuestoAPagar(ByVal year As Long)
         ' Insertar nueva fila
         ws.Rows(targetRow).Insert Shift:=xlDown
 
-        ' Copiar estética de la fila superior
+        ' Copiar est�tica de la fila superior
         ws.Rows(targetRow).EntireRow.RowHeight = ws.Rows(targetRow - 1).EntireRow.RowHeight
         ws.Rows(targetRow).Font.Bold = ws.Rows(targetRow - 1).Font.Bold
         ws.Rows(targetRow).Interior.Color = ws.Rows(targetRow - 1).Interior.Color
 
-        ' Glosa, código y formato de meses
+        ' Glosa, c�digo y formato de meses
         ws.Cells(targetRow, "A").value = GLOSA
         ws.Cells(targetRow, "B").NumberFormat = "000"
         ws.Cells(targetRow, "B").value = 91
@@ -170,7 +170,7 @@ Private Sub EnsureFilaCodigo091_DebajoImpuestoAPagar(ByVal year As Long)
     Application.ScreenUpdating = True
 End Sub
 
-' Devuelve la fila del código dentro del bloque [startRow..endRow]
+' Devuelve la fila del c�digo dentro del bloque [startRow..endRow]
 ' Busca en B (normal) o en A (caso 2025: "703"/"123" en col A).
 Private Function RowOfCodigo(ws As Worksheet, startRow As Long, endRow As Long, ByVal codeNum As Long) As Long
     Dim r As Long, a As String
@@ -187,18 +187,18 @@ Private Function RowOfCodigo(ws As Worksheet, startRow As Long, endRow As Long, 
     Next r
 End Function
 
-' ---- NUEVO helper: detecta si la fila es de "código"
+' ---- NUEVO helper: detecta si la fila es de "c�digo"
 Private Function EsFilaDeCodigo(ws As Worksheet, ByVal r As Long) As Boolean
     Dim a As String, b As Variant
 
-    ' B numérica (caso normal)
+    ' B num�rica (caso normal)
     b = ws.Cells(r, "B").value
     If Len(Trim$(b & "")) > 0 And IsNumeric(b) Then
         EsFilaDeCodigo = True
         Exit Function
     End If
 
-    ' A con número de 1–3 dígitos (p.ej. 703 / 123) y no es la etiqueta
+    ' A con n�mero de 1�3 d�gitos (p.ej. 703 / 123) y no es la etiqueta
     a = Trim$(CStr(ws.Cells(r, "A").value))
     If Len(a) > 0 And IsNumeric(a) Then
         If Len(a) <= 3 Then EsFilaDeCodigo = True
@@ -214,18 +214,18 @@ Private Sub EnsureFilaImpuestoAPagar(ByVal year As Long)
     Dim lastCodeRow As Long, r As Long, c As Long
     Dim targetRow As Long
 
-    ' Límites del bloque del año
+    ' L�mites del bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
     ' ===== PARCHE SOLO 2025 =====
-    ' Si el 2025 es el último bloque, debajo de endRow puede haber filas con B numérica y A vacía.
-    ' Las consideramos parte del bloque para que "Impuesto a Pagar" quede DESPUÉS de ellas.
+    ' Si el 2025 es el �ltimo bloque, debajo de endRow puede haber filas con B num�rica y A vac�a.
+    ' Las consideramos parte del bloque para que "Impuesto a Pagar" quede DESPU�S de ellas.
     If year = 2025 Then
         Dim lastUsedB As Long, r2 As Long
         lastUsedB = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
         For r2 = endRow + 1 To lastUsedB
-            ' si aparece algo en A, paramos (sería otra sección)
+            ' si aparece algo en A, paramos (ser�a otra secci�n)
             If Len(Trim$(CStr(ws.Cells(r2, "A").value))) > 0 Then Exit For
             If IsNumeric(ws.Cells(r2, "B").value) Then endRow = r2
         Next r2
@@ -236,7 +236,7 @@ Private Sub EnsureFilaImpuestoAPagar(ByVal year As Long)
     rowLabel = FindRowByYearAndLabel(year, LABEL_IMP)
     If rowLabel = 0 Then Exit Sub
 
-    ' Buscar el ÚLTIMO renglón con código (col B numérica) dentro del bloque
+    ' Buscar el �LTIMO rengl�n con c�digo (col B num�rica) dentro del bloque
     lastCodeRow = 0
     For r = rowLabel To endRow
         If IsNumeric(ws.Cells(r, "B").value) Then
@@ -245,7 +245,7 @@ Private Sub EnsureFilaImpuestoAPagar(ByVal year As Long)
     Next r
     If lastCodeRow = 0 Then Exit Sub
 
-    ' ¿Ya existe "Impuesto a Pagar"?
+    ' �Ya existe "Impuesto a Pagar"?
     rowTarget = 0
     For r = startRow + 1 To endRow
         If UCase$(Trim$(CStr(ws.Cells(r, "A").value))) = UCase$(LABEL_TARGET) Then
@@ -258,7 +258,7 @@ Private Sub EnsureFilaImpuestoAPagar(ByVal year As Long)
 
     Application.ScreenUpdating = False
 
-    ' Insertar o mover la fila justo DESPUÉS del último código
+    ' Insertar o mover la fila justo DESPU�S del �ltimo c�digo
     If rowTarget = 0 Then
         ws.Rows(targetRow).Insert Shift:=xlDown
         ws.Rows(targetRow).EntireRow.RowHeight = ws.Rows(targetRow - 1).EntireRow.RowHeight
@@ -273,12 +273,12 @@ Private Sub EnsureFilaImpuestoAPagar(ByVal year As Long)
         rowTarget = targetRow
     End If
 
-    ' Fórmulas por mes (C:N) desde la etiqueta hasta el ÚLTIMO código
+    ' F�rmulas por mes (C:N) desde la etiqueta hasta el �LTIMO c�digo
     For c = 3 To 14
         ws.Cells(targetRow, c).FormulaR1C1 = "=SUM(R" & rowLabel & "C:R" & lastCodeRow & "C)"
     Next c
 
-    ' Columna O vacía
+    ' Columna O vac�a
     ws.Cells(targetRow, "O").ClearContents
 
     Application.ScreenUpdating = True
@@ -288,7 +288,7 @@ End Sub
 Private Sub EnsureFilaCodigo049_Debajo048(ByVal year As Long)
     Const LABEL_IMP As String = "Impuesto determinado o remanente"
     ' Respaldo si no encontramos la glosa en el dataset
-    Const GLOSA As String = "Ret. 3% Rta 42 N°1 reint. prest. Tasa 0%"
+    Const GLOSA As String = "Ret. 3% Rta 42 N�1 reint. prest. Tasa 0%"
 
     Dim ws As Worksheet: Set ws = ThisWorkbook.Sheets("F29")
     Dim startRow As Long, endRow As Long
@@ -297,11 +297,11 @@ Private Sub EnsureFilaCodigo049_Debajo048(ByVal year As Long)
     Dim targetRow As Long, r As Long
     Dim glosaReal As String
 
-    ' Límites del bloque del año
+    ' L�mites del bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' Normaliza formato de códigos del bloque
+    ' Normaliza formato de c�digos del bloque
     ws.Range(ws.Cells(startRow + 1, "B"), ws.Cells(endRow, "B")).NumberFormat = "000"
 
     ' Ubicar filas clave
@@ -316,7 +316,7 @@ Private Sub EnsureFilaCodigo049_Debajo048(ByVal year As Long)
         End Select
     Next r
 
-    ' Posición objetivo para 049: debajo de 048; luego 703 > 123 > 062 > rótulo
+    ' Posici�n objetivo para 049: debajo de 048; luego 703 > 123 > 062 > r�tulo
     If row048 > 0 Then
         targetRow = row048 + 1
     ElseIf row703 > 0 Then
@@ -337,26 +337,26 @@ Private Sub EnsureFilaCodigo049_Debajo048(ByVal year As Long)
     Application.ScreenUpdating = False
 
     If row049 > 0 Then
-        ' Mover si hace falta…
+        ' Mover si hace falta�
         If row049 <> targetRow Then
             ws.Rows(row049).Cut
             ws.Rows(targetRow).Insert Shift:=xlDown
             row049 = targetRow
         End If
-        ' …y asegurar la glosa correcta aunque ya existiera
+        ' �y asegurar la glosa correcta aunque ya existiera
         ws.Cells(row049, "A").value = glosaReal
         ws.Cells(row049, "B").NumberFormat = "000"
         ws.Cells(row049, "B").value = 49
     Else
-        ' Insertar nueva fila en la posición objetivo
+        ' Insertar nueva fila en la posici�n objetivo
         ws.Rows(targetRow).Insert Shift:=xlDown
 
-        ' Copiar estética de la fila superior
+        ' Copiar est�tica de la fila superior
         ws.Rows(targetRow).EntireRow.RowHeight = ws.Rows(targetRow - 1).EntireRow.RowHeight
         ws.Rows(targetRow).Font.Bold = ws.Rows(targetRow - 1).Font.Bold
         ws.Rows(targetRow).Interior.Color = ws.Rows(targetRow - 1).Interior.Color
 
-        ' Glosa, código y meses
+        ' Glosa, c�digo y meses
         ws.Cells(targetRow, "A").value = glosaReal
         ws.Cells(targetRow, "B").NumberFormat = "000"
         ws.Cells(targetRow, "B").value = 49
@@ -381,11 +381,11 @@ Private Sub EnsureFilaCodigo810_Debajo596(ByVal year As Long)
     Dim row048 As Long, row151 As Long, row596 As Long, row810 As Long
     Dim targetRow As Long, r As Long
 
-    ' Límites del bloque del año
+    ' L�mites del bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' Normaliza formato de códigos del bloque
+    ' Normaliza formato de c�digos del bloque
     ws.Range(ws.Cells(startRow + 1, "B"), ws.Cells(endRow, "B")).NumberFormat = "000"
 
     ' Ubicar filas clave
@@ -402,7 +402,7 @@ Private Sub EnsureFilaCodigo810_Debajo596(ByVal year As Long)
         End Select
     Next r
 
-    ' Posición objetivo para 810: 596 -> 151 -> 048 -> 703 -> 123 -> 062 -> rótulo
+    ' Posici�n objetivo para 810: 596 -> 151 -> 048 -> 703 -> 123 -> 062 -> r�tulo
     If row596 > 0 Then
         targetRow = row596 + 1
     ElseIf row151 > 0 Then
@@ -431,12 +431,12 @@ Private Sub EnsureFilaCodigo810_Debajo596(ByVal year As Long)
     Else
         ws.Rows(targetRow).Insert Shift:=xlDown
 
-        ' Copiar estética de la fila superior
+        ' Copiar est�tica de la fila superior
         ws.Rows(targetRow).EntireRow.RowHeight = ws.Rows(targetRow - 1).EntireRow.RowHeight
         ws.Rows(targetRow).Font.Bold = ws.Rows(targetRow - 1).Font.Bold
         ws.Rows(targetRow).Interior.Color = ws.Rows(targetRow - 1).Interior.Color
 
-        ' Glosa, código y meses
+        ' Glosa, c�digo y meses
         ws.Cells(targetRow, "A").value = GLOSA
         ws.Cells(targetRow, "B").NumberFormat = "000"
         ws.Cells(targetRow, "B").value = 810
@@ -447,7 +447,7 @@ Private Sub EnsureFilaCodigo810_Debajo596(ByVal year As Long)
     Application.ScreenUpdating = True
 End Sub
 
-' Devuelve el índice del primer token que sea un código válido (o -1 si no hay)
+' Devuelve el �ndice del primer token que sea un c�digo v�lido (o -1 si no hay)
 Private Function FirstCodeIndex(ByRef toks() As String) As Long
     Dim k As Long
     For k = LBound(toks) To UBound(toks)
@@ -459,7 +459,7 @@ Private Function FirstCodeIndex(ByRef toks() As String) As Long
     FirstCodeIndex = -1
 End Function
 
-' Devuelve el último token no vacío del arreglo
+' Devuelve el �ltimo token no vac�o del arreglo
 Private Function LastNonEmptyToken(ByRef toks() As String) As String
     Dim i As Long
     For i = UBound(toks) To LBound(toks) Step -1
@@ -474,18 +474,18 @@ End Function
 
 Private Sub EnsureFilaCodigo596_Debajo151(ByVal year As Long)
     Const LABEL_IMP As String = "Impuesto determinado o remanente"
-    Const GLOSA As String = "RETENCIÓN CAMBIO DE SUJETO"
+    Const GLOSA As String = "RETENCI�N CAMBIO DE SUJETO"
 
     Dim ws As Worksheet: Set ws = ThisWorkbook.Sheets("F29")
     Dim startRow As Long, endRow As Long
     Dim rowLabel As Long, row062 As Long, row123 As Long, row703 As Long, row048 As Long, row151 As Long, row596 As Long
     Dim targetRow As Long, r As Long
 
-    ' Límites del bloque del año
+    ' L�mites del bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' Normaliza formato de códigos del bloque
+    ' Normaliza formato de c�digos del bloque
     ws.Range(ws.Cells(startRow + 1, "B"), ws.Cells(endRow, "B")).NumberFormat = "000"
 
     ' Ubicar filas clave
@@ -501,7 +501,7 @@ Private Sub EnsureFilaCodigo596_Debajo151(ByVal year As Long)
         End Select
     Next r
 
-    ' Posición objetivo: 151 -> 048 -> 703 -> 123 -> 062 -> rótulo
+    ' Posici�n objetivo: 151 -> 048 -> 703 -> 123 -> 062 -> r�tulo
     If row151 > 0 Then
         targetRow = row151 + 1
     ElseIf row048 > 0 Then
@@ -529,12 +529,12 @@ Private Sub EnsureFilaCodigo596_Debajo151(ByVal year As Long)
     Else
         ws.Rows(targetRow).Insert Shift:=xlDown
 
-        ' Copiar estética de la fila superior
+        ' Copiar est�tica de la fila superior
         ws.Rows(targetRow).EntireRow.RowHeight = ws.Rows(targetRow - 1).EntireRow.RowHeight
         ws.Rows(targetRow).Font.Bold = ws.Rows(targetRow - 1).Font.Bold
         ws.Rows(targetRow).Interior.Color = ws.Rows(targetRow - 1).Interior.Color
 
-        ' Glosa, código y meses
+        ' Glosa, c�digo y meses
         ws.Cells(targetRow, "A").value = GLOSA
         ws.Cells(targetRow, "B").NumberFormat = "000"
         ws.Cells(targetRow, "B").value = 596
@@ -548,18 +548,18 @@ End Sub
 
 Private Sub EnsureFilaCodigo151_Debajo048(ByVal year As Long)
     Const LABEL_IMP As String = "Impuesto determinado o remanente"
-    Const GLOSA As String = "RETENCIÓN TASA LEY 21.133 SOBRE RENTAS"
+    Const GLOSA As String = "RETENCI�N TASA LEY 21.133 SOBRE RENTAS"
 
     Dim ws As Worksheet: Set ws = ThisWorkbook.Sheets("F29")
     Dim startRow As Long, endRow As Long
     Dim rowLabel As Long, row062 As Long, row123 As Long, row703 As Long, row048 As Long, row151 As Long
     Dim targetRow As Long, r As Long
 
-    ' Límites del bloque del año
+    ' L�mites del bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' Normaliza formato de códigos del bloque
+    ' Normaliza formato de c�digos del bloque
     ws.Range(ws.Cells(startRow + 1, "B"), ws.Cells(endRow, "B")).NumberFormat = "000"
 
     ' Ubicar filas clave
@@ -574,7 +574,7 @@ Private Sub EnsureFilaCodigo151_Debajo048(ByVal year As Long)
         End Select
     Next r
 
-    ' Posición objetivo: 151 debajo de 048 -> 703 -> 123 -> 062 -> rótulo
+    ' Posici�n objetivo: 151 debajo de 048 -> 703 -> 123 -> 062 -> r�tulo
     If row048 > 0 Then
         targetRow = row048 + 1
     ElseIf row703 > 0 Then
@@ -604,12 +604,12 @@ Private Sub EnsureFilaCodigo151_Debajo048(ByVal year As Long)
     Else
         ws.Rows(targetRow).Insert Shift:=xlDown
 
-        ' Copiar estética de la fila superior
+        ' Copiar est�tica de la fila superior
         ws.Rows(targetRow).EntireRow.RowHeight = ws.Rows(targetRow - 1).EntireRow.RowHeight
         ws.Rows(targetRow).Font.Bold = ws.Rows(targetRow - 1).Font.Bold
         ws.Rows(targetRow).Interior.Color = ws.Rows(targetRow - 1).Interior.Color
 
-        ' Glosa, código y meses
+        ' Glosa, c�digo y meses
         ws.Cells(targetRow, "A").value = GLOSA
         ws.Cells(targetRow, "B").NumberFormat = "000"
         ws.Cells(targetRow, "B").value = 151
@@ -624,7 +624,7 @@ End Sub
 
 Private Sub EnsureFilaCodigo048_Debajo703(ByVal year As Long)
     Const LABEL_IMP As String = "Impuesto determinado o remanente"
-    Const GLOSA As String = "RET. IMP. UNICO TRAB. ART. 74 N°1 LIR"
+    Const GLOSA As String = "RET. IMP. UNICO TRAB. ART. 74 N�1 LIR"
 
     Dim ws As Worksheet: Set ws = ThisWorkbook.Sheets("F29")
     Dim startRow As Long, endRow As Long
@@ -689,14 +689,14 @@ End Sub
 Private Sub EnsureFilaCodigo703_Debajo123(ByVal year As Long)
     Const LABEL_IMP As String = "Impuesto determinado o remanente"
     Const cod As String = "703"
-    Const GLOSA As String = "" ' opcional: coloca aquí el texto exacto si quieres fijar la glosa
+    Const GLOSA As String = "" ' opcional: coloca aqu� el texto exacto si quieres fijar la glosa
 
     Dim ws As Worksheet: Set ws = ThisWorkbook.Sheets("F29")
     Dim startRow As Long, endRow As Long
     Dim rowLabel As Long, row062 As Long, row123 As Long, row703 As Long
     Dim targetRow As Long, r As Long
 
-    ' Límites del bloque del año
+    ' L�mites del bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
@@ -711,7 +711,7 @@ Private Sub EnsureFilaCodigo703_Debajo123(ByVal year As Long)
         If Val(ws.Cells(r, "B").value) = 703 Then row703 = r
     Next r
 
-    ' Posición objetivo: debajo de 123; si no hay 123, debajo de 062; luego del rótulo
+    ' Posici�n objetivo: debajo de 123; si no hay 123, debajo de 062; luego del r�tulo
     If row123 > 0 Then
         targetRow = row123 + 1
     ElseIf row062 > 0 Then
@@ -733,12 +733,12 @@ Private Sub EnsureFilaCodigo703_Debajo123(ByVal year As Long)
     Else
         ws.Rows(targetRow).Insert Shift:=xlDown
 
-        ' Copiar estética de la fila superior
+        ' Copiar est�tica de la fila superior
         ws.Rows(targetRow).EntireRow.RowHeight = ws.Rows(targetRow - 1).EntireRow.RowHeight
         ws.Rows(targetRow).Font.Bold = ws.Rows(targetRow - 1).Font.Bold
         ws.Rows(targetRow).Interior.Color = ws.Rows(targetRow - 1).Interior.Color
 
-        ' Setear glosa (si quieres), código y limpiar meses
+        ' Setear glosa (si quieres), c�digo y limpiar meses
         If Len(GLOSA) > 0 Then ws.Cells(targetRow, "A").value = GLOSA
         ws.Cells(targetRow, "B").NumberFormat = "000"
         ws.Cells(targetRow, "B").value = 703
@@ -753,20 +753,20 @@ End Sub
 Private Sub EnsureFilaCodigo123_Debajo062(ByVal year As Long)
     Const LABEL_IMP As String = "Impuesto determinado o remanente"
     Const cod As String = "123"
-    Const GLOSA As String = "" ' déjalo vacío para no forzar texto; si quieres un nombre fijo, colócalo aquí
+    Const GLOSA As String = "" ' d�jalo vac�o para no forzar texto; si quieres un nombre fijo, col�calo aqu�
 
     Dim ws As Worksheet: Set ws = ThisWorkbook.Sheets("F29")
     Dim startRow As Long, endRow As Long
     Dim rowLabel As Long, row062 As Long, row123 As Long, targetRow As Long, r As Long
 
-    ' Límites del bloque del año
+    ' L�mites del bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' Normaliza formato de códigos del bloque
+    ' Normaliza formato de c�digos del bloque
     ws.Range(ws.Cells(startRow + 1, "B"), ws.Cells(endRow, "B")).NumberFormat = "000"
 
-    ' Fila del rótulo y de 062 (si existe)
+    ' Fila del r�tulo y de 062 (si existe)
     rowLabel = FindRowByYearAndLabel(year, LABEL_IMP)
 
     For r = startRow + 1 To endRow
@@ -774,7 +774,7 @@ Private Sub EnsureFilaCodigo123_Debajo062(ByVal year As Long)
         If Val(ws.Cells(r, "B").value) = 123 Then row123 = r
     Next r
 
-    ' Posición objetivo: debajo de 062; si no existe 062, debajo del rótulo
+    ' Posici�n objetivo: debajo de 062; si no existe 062, debajo del r�tulo
     If row062 > 0 Then
         targetRow = row062 + 1
     ElseIf rowLabel > 0 Then
@@ -786,7 +786,7 @@ Private Sub EnsureFilaCodigo123_Debajo062(ByVal year As Long)
     Application.ScreenUpdating = False
 
     If row123 > 0 Then
-        ' Mover si no está en la posición correcta
+        ' Mover si no est� en la posici�n correcta
         If row123 <> targetRow Then
             ws.Rows(row123).Cut
             ws.Rows(targetRow).Insert Shift:=xlDown
@@ -796,12 +796,12 @@ Private Sub EnsureFilaCodigo123_Debajo062(ByVal year As Long)
         ' Insertar nueva fila en targetRow
         ws.Rows(targetRow).Insert Shift:=xlDown
 
-        ' Copiar estética de la fila superior para no romper formatos
+        ' Copiar est�tica de la fila superior para no romper formatos
         ws.Rows(targetRow).EntireRow.RowHeight = ws.Rows(targetRow - 1).EntireRow.RowHeight
         ws.Rows(targetRow).Font.Bold = ws.Rows(targetRow - 1).Font.Bold
         ws.Rows(targetRow).Interior.Color = ws.Rows(targetRow - 1).Interior.Color
 
-        ' Setear glosa (opcional), código y limpiar meses
+        ' Setear glosa (opcional), c�digo y limpiar meses
         If Len(GLOSA) > 0 Then ws.Cells(targetRow, "A").value = GLOSA
         ws.Cells(targetRow, "B").NumberFormat = "000"
         ws.Cells(targetRow, "B").value = 123
@@ -822,17 +822,17 @@ Private Sub EnsureFilaCodigo062_DebajoImpuestoDet(ByVal year As Long)
     Dim startRow As Long, endRow As Long
     Dim rowLabel As Long, row062 As Long, targetRow As Long, r As Long
 
-    ' Límites del bloque del año
+    ' L�mites del bloque del a�o
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' Normaliza formato de códigos del bloque
+    ' Normaliza formato de c�digos del bloque
     ws.Range(ws.Cells(startRow + 1, "B"), ws.Cells(endRow, "B")).NumberFormat = "000"
 
     ' Fila de la etiqueta y del 062 si ya existe
     rowLabel = FindRowByYearAndLabel(year, LABEL_IMP)
     If rowLabel = 0 Then
-        ' Si por alguna razón no está la etiqueta, lo dejamos al final del bloque
+        ' Si por alguna raz�n no est� la etiqueta, lo dejamos al final del bloque
         targetRow = endRow + 1
     Else
         targetRow = rowLabel + 1
@@ -848,7 +848,7 @@ Private Sub EnsureFilaCodigo062_DebajoImpuestoDet(ByVal year As Long)
     Application.ScreenUpdating = False
 
     If row062 > 0 Then
-        ' Si existe y no está en el lugar correcto, lo movemos
+        ' Si existe y no est� en el lugar correcto, lo movemos
         If row062 <> targetRow Then
             ws.Rows(row062).Cut
             ws.Rows(targetRow).Insert Shift:=xlDown
@@ -858,12 +858,12 @@ Private Sub EnsureFilaCodigo062_DebajoImpuestoDet(ByVal year As Long)
         ' No existe: insertar nueva fila en targetRow
         ws.Rows(targetRow).Insert Shift:=xlDown
 
-        ' Copiar estética básica de la fila superior para no romper formatos
+        ' Copiar est�tica b�sica de la fila superior para no romper formatos
         ws.Rows(targetRow).EntireRow.RowHeight = ws.Rows(targetRow - 1).EntireRow.RowHeight
         ws.Rows(targetRow).Font.Bold = ws.Rows(targetRow - 1).Font.Bold
         ws.Rows(targetRow).Interior.Color = ws.Rows(targetRow - 1).Interior.Color
 
-        ' Setear glosa, código y limpiar meses
+        ' Setear glosa, c�digo y limpiar meses
         ws.Cells(targetRow, "A").value = GLOSA
         ws.Cells(targetRow, "B").NumberFormat = "000"
         ws.Cells(targetRow, "B").value = 62
@@ -901,14 +901,14 @@ Function GetYearPosition(ByVal searchYear As Integer) As Long
     ' Establecer la hoja de trabajo "Archivos"
     Set ws = ThisWorkbook.Sheets("Archivos")
     
-    ' Rango de los años (columna A desde la fila 2 hasta la 50)
+    ' Rango de los a�os (columna A desde la fila 2 hasta la 50)
     Set yearRange = ws.Range("A2:A1000")
     
-    ' Crear una colección para almacenar los años únicos
+    ' Crear una colecci�n para almacenar los a�os �nicos
     Set uniqueYears = New Collection
     
     On Error Resume Next
-    ' Llenar la colección con años únicos
+    ' Llenar la colecci�n con a�os �nicos
     For Each yearCell In yearRange
         If Not IsEmpty(yearCell.value) Then
             uniqueYears.Add yearCell.value, CStr(yearCell.value)
@@ -916,23 +916,23 @@ Function GetYearPosition(ByVal searchYear As Integer) As Long
     Next yearCell
     On Error GoTo 0
   
-    ' Buscar la posición del año
+    ' Buscar la posici�n del a�o
     For i = 1 To uniqueYears.Count
       
         If uniqueYears(i) = searchYear Then
            
             
-                GetYearPosition = i - 1 ' Restar 1 para que la posición comience desde 0
+                GetYearPosition = i - 1 ' Restar 1 para que la posici�n comience desde 0
                 Exit Function
             
           
         End If
     Next i
     
-    ' Si no se encuentra el año, devolver -1
+    ' Si no se encuentra el a�o, devolver -1
     GetYearPosition = -1
 End Function
-' === Helpers: detectar último mes con CSV en "Archivos" (cols D:E) ===
+' === Helpers: detectar �ltimo mes con CSV en "Archivos" (cols D:E) ===
 Private Function UltimoMesCSV(ByVal year As Long) As Integer
     Dim ws As Worksheet, lastRow As Long, r As Long, c As Long
     Dim s As String, mm As Integer, maxm As Integer
@@ -956,24 +956,24 @@ Private Function UltimoMesCSV(ByVal year As Long) As Integer
     UltimoMesCSV = maxm ' 0 si no hay ninguno
 End Function
 
-' === Helper: ubicar inicio/fin del bloque de un año en F29 (columna A) ===
+' === Helper: ubicar inicio/fin del bloque de un a�o en F29 (columna A) ===
 Private Sub LimitesBloqueF29(ByVal year As Long, ByRef startRow As Long, ByRef endRow As Long)
     Dim ws As Worksheet, lastRow As Long, r As Long, found As Boolean
     Set ws = ThisWorkbook.Sheets("F29")
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
     startRow = 0: endRow = 0
 
-    ' buscar el rótulo del año en col A
+    ' buscar el r�tulo del a�o en col A
     For r = 1 To lastRow
         If ws.Cells(r, "A").value = year Then
-            startRow = r               ' fila del rótulo del año (encabezado)
+            startRow = r               ' fila del r�tulo del a�o (encabezado)
             Exit For
         End If
     Next r
 
     If startRow = 0 Then Exit Sub
 
-    ' fin del bloque: siguiente rótulo de año o fin de hoja
+    ' fin del bloque: siguiente r�tulo de a�o o fin de hoja
     For r = startRow + 1 To lastRow
         If IsNumeric(ws.Cells(r, "A").value) And ws.Cells(r, "A").value >= 1900 And ws.Cells(r, "A").value <= 9999 Then
             endRow = r - 1
@@ -995,10 +995,10 @@ Private Sub EnsureFilaCodigoEnF29(ByVal year As Long, ByVal code As String, ByVa
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' Formatear la columna de códigos del bloque del año a 3 dígitos
+    ' Formatear la columna de c�digos del bloque del a�o a 3 d�gitos
     ws.Range(ws.Cells(startRow + 1, "B"), ws.Cells(endRow, "B")).NumberFormat = "000"
 
-    ' Ubicar filas de 020, 142 y 039 (comparación numérica)
+    ' Ubicar filas de 020, 142 y 039 (comparaci�n num�rica)
     For r = startRow + 1 To endRow
         Select Case True
             Case Val(ws.Cells(r, "B").value) = Val(preferAfterCode):   row020 = r
@@ -1007,9 +1007,9 @@ Private Sub EnsureFilaCodigoEnF29(ByVal year As Long, ByVal code As String, ByVa
         End Select
     Next r
 
-    ' Decidir la posición ideal
+    ' Decidir la posici�n ideal
     If row020 > 0 Then
-        insertRow = row020 + 1              ' después de 020
+        insertRow = row020 + 1              ' despu�s de 020
     ElseIf row142 > 0 Then
         insertRow = row142                  ' antes de 142
     Else
@@ -1026,7 +1026,7 @@ Private Sub EnsureFilaCodigoEnF29(ByVal year As Long, ByVal code As String, ByVa
     ' Si no existe, insertarla
     If row039 = 0 Then
         ws.Rows(insertRow).Insert Shift:=xlDown
-        ' Copiar estética de la fila superior
+        ' Copiar est�tica de la fila superior
         ws.Rows(insertRow).EntireRow.RowHeight = ws.Rows(insertRow - 1).EntireRow.RowHeight
         ws.Rows(insertRow).Font.Bold = ws.Rows(insertRow - 1).Font.Bold
         ws.Rows(insertRow).Interior.Color = ws.Rows(insertRow - 1).Interior.Color
@@ -1037,17 +1037,17 @@ Private Sub EnsureFilaCodigoEnF29(ByVal year As Long, ByVal code As String, ByVa
         ws.Cells(insertRow, "C").Resize(1, 12).ClearContents
         ws.Cells(insertRow, "C").Resize(1, 12).NumberFormat = "#,##0"
     Else
-        ' Asegura formato 000 si ya existía
+        ' Asegura formato 000 si ya exist�a
         ws.Cells(row039, "B").NumberFormat = "000"
     End If
 End Sub
 
-' === Helper: ¿la fila es de “código” (020, 142, etc.)? -> B numérica ===
+' === Helper: �la fila es de �c�digo� (020, 142, etc.)? -> B num�rica ===
 Private Function FilaConCodigo(ws As Worksheet, ByVal r As Long) As Boolean
     FilaConCodigo = IsNumeric(ws.Cells(r, "B").value)
 End Function
 
-' === Acción: limpia meses futuros (sin CSV) dentro del bloque del año en F29 ===
+' === Acci�n: limpia meses futuros (sin CSV) dentro del bloque del a�o en F29 ===
 Public Sub CorrigeMesesFuturosF29(ByVal year As Long)
     Dim ws As Worksheet
     Dim startRow As Long, endRow As Long
@@ -1055,20 +1055,20 @@ Public Sub CorrigeMesesFuturosF29(ByVal year As Long)
 
     Set ws = ThisWorkbook.Sheets("F29")
 
-    ' 1) ¿hasta qué mes hay CSV?
+    ' 1) �hasta qu� mes hay CSV?
     lastMonth = UltimoMesCSV(year)        ' 0..12
     If lastMonth = 12 Then Exit Sub       ' todo completo -> nada que limpiar
 
-    ' 2) Límites del bloque del año en F29
+    ' 2) L�mites del bloque del a�o en F29
     Call LimitesBloqueF29(year, startRow, endRow)
     If startRow = 0 Or endRow = 0 Then Exit Sub
 
-    ' 3) Limpiar desde el mes siguiente al último disponible
+    ' 3) Limpiar desde el mes siguiente al �ltimo disponible
     '    C=3 => mes 1, ..., N=14 => mes 12
     clearFromCol = 3 + lastMonth          ' si lastMonth=5 (mayo), se limpia desde col 8 (junio)
     If clearFromCol <= 14 Then
         Application.ScreenUpdating = False
-        For r = startRow + 1 To endRow     ' saltar la fila del rótulo del año
+        For r = startRow + 1 To endRow     ' saltar la fila del r�tulo del a�o
             If FilaConCodigo(ws, r) Then
                 For c = clearFromCol To 14
                     ws.Cells(r, c).ClearContents
@@ -1078,7 +1078,7 @@ Public Sub CorrigeMesesFuturosF29(ByVal year As Long)
         Application.ScreenUpdating = True
     End If
 
-    ' 4) Recalcular totales en col O (si ya tienes este sub en tu módulo)
+    ' 4) Recalcular totales en col O (si ya tienes este sub en tu m�dulo)
     On Error Resume Next
     RecalcTotalesF29
     On Error GoTo 0
@@ -1103,17 +1103,17 @@ Sub Boton_F29_fom()
     ' Definir la hoja de trabajo
     Set ws = ThisWorkbook.Sheets("F29")
     
-    ' Leer los valores de los años
+    ' Leer los valores de los a�os
     startYear = ws.Range("G2").value
     endYear = ws.Range("I2").value
     
-    ' Calcular la diferencia de años (número de replicaciones)
+    ' Calcular la diferencia de a�os (n�mero de replicaciones)
      yearDiff = endYear - startYear
     
      
-     ' Verificar que la diferencia de años sea mayor que 0
+     ' Verificar que la diferencia de a�os sea mayor que 0
      If yearDiff < 0 Then
-         MsgBox "El valor de año final debe ser mayor o igual que el de inicio.", vbExclamation
+         MsgBox "El valor de a�o final debe ser mayor o igual que el de inicio.", vbExclamation
          Exit Sub
      End If
     
@@ -1135,7 +1135,7 @@ Sub Boton_F29_fom()
        Call ReplicarPlanillaCalculo(startYear, 3, "F29", yearDiff)
        
        
-       positionRow = 6 ' Inicializamos la posición de la fila en 3 para el primer año
+       positionRow = 6 ' Inicializamos la posici�n de la fila en 3 para el primer a�o
        
            
        CountYear = 1
@@ -1143,14 +1143,14 @@ Sub Boton_F29_fom()
            yearInt = startYear + i
        
            Call ProcesarF29(yearInt, positionRow, CountYear)
-           ' Después de cada año, incrementamos positionRow en 19 (para el siguiente año)
+           ' Despu�s de cada a�o, incrementamos positionRow en 19 (para el siguiente a�o)
            positionRow = positionRow + 60
            CountYear = CountYear + 13
            
        Next i
     End If
     
-    ' <<< limpia meses sin CSV en el ÚLTIMO año (p.ej. 2025)
+    ' <<< limpia meses sin CSV en el �LTIMO a�o (p.ej. 2025)
     Call CorrigeMesesFuturosF29(endYear)
  
 End Sub
@@ -1163,19 +1163,19 @@ Function Validaryear(ByVal yearBuscado As Long, ByVal Col As String) As Boolean
     ' Establecer la hoja "Archivos"
     Set ws = ThisWorkbook.Sheets("Archivos")
     
-    ' Definir el rango de años (columna A hasta fila 100, ajusta según tus datos)
+    ' Definir el rango de a�os (columna A hasta fila 100, ajusta seg�n tus datos)
     Set rngYears = ws.Range("A2:A100") ' Comienza en fila 2 para evitar encabezados
     
     ' Inicializar la variable de retorno como Falso
     Validaryear = False
     
-    ' Buscar el año en la columna A
+    ' Buscar el a�o en la columna A
     For Each celda In rngYears
         If celda.value = yearBuscado Then
             ' Verificar si hay datos en la columna especificada para la fila correspondiente
             If ws.Cells(celda.Row, columns(Col).Column).value <> "" Then
-                Validaryear = True ' Si se encuentra al menos un dato, es válido
-                Exit Function       ' Salir de la función
+                Validaryear = True ' Si se encuentra al menos un dato, es v�lido
+                Exit Function       ' Salir de la funci�n
             End If
         End If
     Next celda
@@ -1201,9 +1201,9 @@ Private Sub ProcesarF29(ByVal yearInput As Long, ByVal positionRow As Integer, B
     End If
     posicion = posicion + 1
     
-    ' Obtener valores de los parámetros de la hoja Param
+    ' Obtener valores de los par�metros de la hoja Param
     F29Path = Sheets("Param").Range("B2").value
-    ' Concatenar el año a la ruta
+    ' Concatenar el a�o a la ruta
     F29Path = F29Path & "\" & CStr(yearInput)
      
    
@@ -1220,7 +1220,7 @@ Private Sub ProcesarF29(ByVal yearInput As Long, ByVal positionRow As Integer, B
         EnsureFilaCodigoEnF29 yearInput, "039", "IVA TOT RET. TERC.(TASA ART. 14)", "020", "142"
     End If
     
-    ' NUEVO: Asegura 062 justo debajo de "Impuesto determinado o remanente" SOLO 2023–2025
+    ' NUEVO: Asegura 062 justo debajo de "Impuesto determinado o remanente" SOLO 2023�2025
     If yearInput >= 2023 And yearInput <= 2025 Then
         EnsureFilaCodigo062_DebajoImpuestoDet yearInput
         ' NUEVO: Asegura 123 inmediatamente debajo de 062
@@ -1273,7 +1273,7 @@ Sub BuscarCodigos(mes As Integer, ByVal positionRow As Integer, Dataset As Strin
     Dim Records As Integer
     Dim pos As Integer
     Dim Lista As Collection
-    Set Lista = New Collection ' Inicializa la colección
+    Set Lista = New Collection ' Inicializa la colecci�n
     Dim Result As Variant
     
      
@@ -1319,16 +1319,16 @@ Function ObtenerValorPorCodigoBinario(ByRef Lista As Collection, ByVal CodigoBus
     inicio = 1
     fin = Lista.Count
     
-    ' Convertir CódigoBuscado a número si es posible
+    ' Convertir C�digoBuscado a n�mero si es posible
     On Error Resume Next
     
     On Error GoTo 0
 
     While inicio <= fin
         medio = (inicio + fin) \ 2
-        CodigoActual = Lista(medio)(1) ' Suponemos que el código está en el índice 1 del elemento
+        CodigoActual = Lista(medio)(1) ' Suponemos que el c�digo est� en el �ndice 1 del elemento
 
-        ' Comparar el CódigoBuscado con el CódigoActual
+        ' Comparar el C�digoBuscado con el C�digoActual
         If CodigoActual = CodigoBuscado Or CInt(CodigoActual) = CInt(CodigoBuscado) Then
             ObtenerValorPorCodigoBinario = Lista(medio)(3) ' Retorna el ValorActual
             Exit Function
@@ -1339,7 +1339,7 @@ Function ObtenerValorPorCodigoBinario(ByRef Lista As Collection, ByVal CodigoBus
         End If
     Wend
 
-    ' Si no se encuentra el código, devuelve -1
+    ' Si no se encuentra el c�digo, devuelve -1
     ObtenerValorPorCodigoBinario = -1
 End Function
 
@@ -1365,8 +1365,8 @@ Function GetDataPdf(Dataset As String) As Collection
         texto = Mid(texto, posicion)
     End If
 
-    posicion = InStr(texto, "Código Glosa Valor")
-    texto = Replace(texto, "Código Glosa Valor", "|")
+    posicion = InStr(texto, "C�digo Glosa Valor")
+    texto = Replace(texto, "C�digo Glosa Valor", "|")
     texto = Replace(texto, "TOTAL A PAGAR DENTRO DEL PLAZO LEGAL", "|")
     texto = Replace(texto, "+", "|")
 
@@ -1385,14 +1385,14 @@ Function GetDataPdf(Dataset As String) As Collection
             t = LBound(Lineas)
             Do While t <= UBound(Lineas)
                 If BuscarEnArray(Trim$(Lineas(t))) Then
-                    ' Buscar el inicio del próximo código (bucles SAFE: sin AND)
+                    ' Buscar el inicio del pr�ximo c�digo (bucles SAFE: sin AND)
                     nextIdx = t + 1
                     Do While nextIdx <= UBound(Lineas)
                         If BuscarEnArray(Trim$(Lineas(nextIdx))) Then Exit Do
                         nextIdx = nextIdx + 1
                     Loop
 
-                    ' Último token no vacío antes del siguiente código o del fin del bloque
+                    ' �ltimo token no vac�o antes del siguiente c�digo o del fin del bloque
                     scanEnd = nextIdx - 1
                     If scanEnd > UBound(Lineas) Then scanEnd = UBound(Lineas)
 
@@ -1409,11 +1409,11 @@ Function GetDataPdf(Dataset As String) As Collection
                     If idxValor <> -1 And idxValor >= LBound(Lineas) And idxValor <= UBound(Lineas) Then
                         valorToken = Trim$(Lineas(idxValor))
                     Else
-                        valorToken = ""   ' no hay valor explícito
+                        valorToken = ""   ' no hay valor expl�cito
                     End If
                     Valor = FormatearNumero(valorToken)
 
-                    ' Descripción = tokens entre el código y el valor
+                    ' Descripci�n = tokens entre el c�digo y el valor
                     Descripcion = ""
                     If idxValor <> -1 Then
                         For k = t + 1 To idxValor - 1
@@ -1424,7 +1424,7 @@ Function GetDataPdf(Dataset As String) As Collection
                     End If
                     Descripcion = "    " & Trim$(Descripcion) & "    "
 
-                    ' Ahora (mantiene tu excepción pero segura):
+                    ' Ahora (mantiene tu excepci�n pero segura):
                     If IsNumeric(codigo) And CInt(codigo) = 91 Then
                         If t + 1 <= UBound(Lineas) Then
                             miLista.Add Array(miLista, codigo, Descripcion, FormatearNumero(Trim$(Lineas(t + 1))))
@@ -1436,7 +1436,7 @@ Function GetDataPdf(Dataset As String) As Collection
                         miLista.Add Array(miLista, codigo, Descripcion, Valor)
                     End If
 
-                    ' Continuar desde el siguiente posible código
+                    ' Continuar desde el siguiente posible c�digo
                     If nextIdx > t Then
                         t = nextIdx
                     Else
@@ -1458,7 +1458,7 @@ Function OrdenarListaConWorksheetFunction(miLista As Collection) As Collection
     Dim miLista2 As Collection
     Dim i As Long
     
-    ' Crear la lista como una colección
+    ' Crear la lista como una colecci�n
     Set miLista2 = New Collection
      
    
@@ -1477,14 +1477,14 @@ Function OrdenarListaConWorksheetFunction(miLista As Collection) As Collection
     ws.Visible = xlSheetHidden ' Oculta la hoja (modo normal)
     ' Si deseas ocultarla completamente, usa: ws.Visible = xlSheetVeryHidden
     
-    ' Pasar los datos de la lista a la hoja de cálculo
+    ' Pasar los datos de la lista a la hoja de c�lculo
     For i = 1 To miLista.Count
-        ws.Cells(i, 1).value = miLista(i)(1) ' Código
-        ws.Cells(i, 2).value = miLista(i)(2) ' Descripción
+        ws.Cells(i, 1).value = miLista(i)(1) ' C�digo
+        ws.Cells(i, 2).value = miLista(i)(2) ' Descripci�n
         ws.Cells(i, 3).value = miLista(i)(3) ' Valor
     Next i
     
-    ' Ordenar los datos en la hoja de cálculo por la columna "Código"
+    ' Ordenar los datos en la hoja de c�lculo por la columna "C�digo"
     ws.Sort.SortFields.Clear
     ws.Sort.SortFields.Add Key:=ws.Range("A1:A" & miLista.Count), _
                            SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
@@ -1497,7 +1497,7 @@ Function OrdenarListaConWorksheetFunction(miLista As Collection) As Collection
         .Apply
     End With
     
-    ' Recuperar los datos ordenados de la hoja de cálculo
+    ' Recuperar los datos ordenados de la hoja de c�lculo
     ' miLista.Clear
     For i = 1 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
         miLista2.Add Array(miLista2, ws.Cells(i, 1).value, ws.Cells(i, 2).value, ws.Cells(i, 3).value)
@@ -1530,12 +1530,12 @@ Function FormatearNumero(ByVal Valor As String) As String
     Exit Function
 
 ManejoErrores:
-    FormatearNumero = "Error: Ocurrió un problema al procesar el valor"
+    FormatearNumero = "Error: Ocurri� un problema al procesar el valor"
 End Function
 
 
 Sub ImprimirListaEnHoja(ByRef Lista As Collection)
-    ' Imprime los datos de la colección en una hoja de Excel
+    ' Imprime los datos de la colecci�n en una hoja de Excel
     Dim ws As Worksheet
     Dim i As Long
     Dim j As Long
@@ -1553,8 +1553,8 @@ Sub ImprimirListaEnHoja(ByRef Lista As Collection)
     
     ' Limpiar la hoja
     'ws.Cells.Clear
-    ws.Cells(1, 1).value = "Código"
-    ws.Cells(1, 2).value = "Descripción"
+    ws.Cells(1, 1).value = "C�digo"
+    ws.Cells(1, 2).value = "Descripci�n"
     ws.Cells(1, 3).value = "Valor"
     
     ' Escribir los datos en la hoja
@@ -1562,8 +1562,8 @@ Sub ImprimirListaEnHoja(ByRef Lista As Collection)
     
     
     For Each elemento In Lista
-        ws.Cells(i, Col + 1).value = elemento(1) ' Código
-        ws.Cells(i, Col + 2).value = elemento(2) ' Descripción
+        ws.Cells(i, Col + 1).value = elemento(1) ' C�digo
+        ws.Cells(i, Col + 2).value = elemento(2) ' Descripci�n
         ws.Cells(i, Col + 3).value = elemento(3) ' Valor
         i = i + 1
     Next elemento
@@ -1597,7 +1597,7 @@ Function ProcesaDataSecuencial(rutaPDF As String) As String 'Obtiene el texto co
     'On Error GoTo 0
     
     'If AcroApp Is Nothing Or AcroAVDoc Is Nothing Then
-    '    MsgBox "Adobe Acrobat Reader no está configurado correctamente o no está instalado.", vbCritical
+    '    MsgBox "Adobe Acrobat Reader no est� configurado correctamente o no est� instalado.", vbCritical
         
     'End If
     LastPalabra = ""
@@ -1607,10 +1607,10 @@ Function ProcesaDataSecuencial(rutaPDF As String) As String 'Obtiene el texto co
         Set AcroPDDoc = AcroAVDoc.GetPDDoc
         Set jsObj = AcroPDDoc.GetJSObject
 
-        ' Obtener el número total de páginas
+        ' Obtener el n�mero total de p�ginas
         NumPaginas = jsObj.numPages
 
-        ' Extraer texto de cada página
+        ' Extraer texto de cada p�gina
         
         For i = 0 To NumPaginas - 1
             NumPalabras = jsObj.getPageNumWords(i)
@@ -1623,7 +1623,7 @@ Function ProcesaDataSecuencial(rutaPDF As String) As String 'Obtiene el texto co
                     
                 End If
             
-                ' Obtener la palabra de la página actual
+                ' Obtener la palabra de la p�gina actual
                 palabra = jsObj.getPageNthWord(i, j)
                 palabra = FormatearNumero(palabra)
                 LastPalabra = palabra
@@ -1633,10 +1633,10 @@ Function ProcesaDataSecuencial(rutaPDF As String) As String 'Obtiene el texto co
                 '    MsgBox Cadena
                 'End If
                 
-                    ' Validar si la palabra está en CodigosValidos.Keys y tiene 3 o menos caracteres
+                    ' Validar si la palabra est� en CodigosValidos.Keys y tiene 3 o menos caracteres
                 'If ValidarCodigo(palabra) And Len(palabra) <= 3 And Flag And ObtenerPenultimaPalabra(Cadena) <> "Ley" Then
                 If BuscarEnArray(palabra) And Len(palabra) <= 3 And Flag Then
-                    ' Si la palabra es un código válido y tiene 3 o menos caracteres, agregar "|" al inicio de la palabra
+                    ' Si la palabra es un c�digo v�lido y tiene 3 o menos caracteres, agregar "|" al inicio de la palabra
                      
                     palabra = "|" & palabra
                     Cadena = ""
@@ -1644,7 +1644,7 @@ Function ProcesaDataSecuencial(rutaPDF As String) As String 'Obtiene el texto co
                 Cadena = Cadena & LastPalabra & " "
                 TextoExtraido = TextoExtraido & palabra & " "
             Next j
-            TextoExtraido = TextoExtraido & vbCrLf ' Salto de línea entre páginas
+            TextoExtraido = TextoExtraido & vbCrLf ' Salto de l�nea entre p�ginas
         Next i
                
         ProcesaDataSecuencial = TextoExtraido ' Retorna el dataset
@@ -1686,7 +1686,7 @@ Function BuscarEnArray(codigo As String) As Boolean
     For i = LBound(arr) To UBound(arr)
         If arr(i) = codigo And Len(codigo) <= 3 Then
             BuscarEnArray = True
-            Exit Function ' Salimos de la función si encontramos el valor
+            Exit Function ' Salimos de la funci�n si encontramos el valor
         End If
     Next i
     
@@ -1696,7 +1696,7 @@ End Function
 
 
 Sub ImprimirListaEnHoja2(Data As String)
-    ' Imprime los datos de la colección en una hoja de Excel
+    ' Imprime los datos de la colecci�n en una hoja de Excel
     Dim ws As Worksheet
     Dim i As Long
     Dim elemento As Variant
@@ -1747,16 +1747,16 @@ Sub boton01()
     ' Definir la hoja de trabajo
     Set ws = ThisWorkbook.Sheets("Compras")
     
-    ' Leer los valores de los años desde las celdas G1 (inicio) y G2 (fin)
+    ' Leer los valores de los a�os desde las celdas G1 (inicio) y G2 (fin)
     startYear = ws.Range("G1").value
     endYear = ws.Range("I1").value
     
-    ' Calcular la diferencia de años (número de replicaciones)
+    ' Calcular la diferencia de a�os (n�mero de replicaciones)
     yearDiff = endYear - startYear
     
-    ' Verificar que la diferencia de años sea mayor que 0
+    ' Verificar que la diferencia de a�os sea mayor que 0
     If yearDiff < 0 Then
-        MsgBox "El valor de año final debe ser mayor o igual que el de inicio.", vbExclamation
+        MsgBox "El valor de a�o final debe ser mayor o igual que el de inicio.", vbExclamation
         Exit Sub
     End If
     
@@ -1767,16 +1767,16 @@ Sub boton01()
        Call ReplicarPlanillaCalculo(startYear, 1, "Compras", yearDiff)
        
        
-       ' Llamar a la función ProcesarRC para cada año
+       ' Llamar a la funci�n ProcesarRC para cada a�o
        
-       positionRow = 5 ' Inicializamos la posición de la fila en 5 para el primer año
+       positionRow = 5 ' Inicializamos la posici�n de la fila en 5 para el primer a�o
         
        CountYear = 1
        For i = 0 To yearDiff
            yearInt = startYear + i
         
            Call ProcesarRC(yearInt, positionRow, CountYear)
-           ' Después de cada año, incrementamos positionRow en 19 (para el siguiente año)
+           ' Despu�s de cada a�o, incrementamos positionRow en 19 (para el siguiente a�o)
            positionRow = positionRow + 19
            CountYear = CountYear + 13
            If i > 0 Then
@@ -1811,10 +1811,10 @@ Private Sub ProcesarRC(ByVal yearInput As Long, ByVal positionRow As Long, ByVal
     posicion = posicion + 1
   
 
-     ' Obtener valores de los parámetros de la hoja Param
+     ' Obtener valores de los par�metros de la hoja Param
     RC_Path = Sheets("Param").Range("B4").value
-    ' Concatenar el año a la ruta
-    RC_Path = RC_Path & "\" & yearInput ' Concatenar año al final de la ruta
+    ' Concatenar el a�o a la ruta
+    RC_Path = RC_Path & "\" & yearInput ' Concatenar a�o al final de la ruta
     'RC_Fname = Sheets("Param").Range("B5").value
     
     ' Obtener referencia a la hoja Summary
@@ -1826,16 +1826,16 @@ Private Sub ProcesarRC(ByVal yearInput As Long, ByVal positionRow As Long, ByVal
     posArchivo = posicion
     For mes = 1 To 12
         
-        ' Procesar el archivo TXT y buscar los códigos
+        ' Procesar el archivo TXT y buscar los c�digos
         filepath = RC_Path & "\" & wsFiles.Cells(posArchivo + mes, 4).value
         'MsgBox wsFiles.Cells(posArchivo + mes, 4).value
         If wsFiles.Cells(posArchivo + mes, 4).value <> "" Then
-            'Notas crédito
+            'Notas cr�dito
             arr = Array("61")
             wsSummary.Cells(pos + mes, 4) = Abs(SumaPorColumnaParametrica(filepath, mes, "Tipo Doc", arr, "Monto IVA Recuperable", 12))
             
             
-            'Total Crédito fiscal
+            'Total Cr�dito fiscal
             arr = Array("33", "39", "46", "56", "914")
             wsSummary.Cells(pos + mes, 9) = SumaPorColumnaParametrica(filepath, mes, "Tipo Doc", arr, "Monto IVA Recuperable", 12) - wsSummary.Cells(pos + mes, 4)
             
@@ -1869,16 +1869,16 @@ Sub Buton02()
     ' Definir la hoja de trabajo
     Set ws = ThisWorkbook.Sheets("Ventas")
     
-    ' Leer los valores de los años desde las celdas G1 (inicio) y G2 (fin)
+    ' Leer los valores de los a�os desde las celdas G1 (inicio) y G2 (fin)
     startYear = ws.Range("G1").value
     endYear = ws.Range("I1").value
     
-    ' Calcular la diferencia de años (número de replicaciones)
+    ' Calcular la diferencia de a�os (n�mero de replicaciones)
     yearDiff = endYear - startYear
     
-    ' Verificar que la diferencia de años sea mayor que 0
+    ' Verificar que la diferencia de a�os sea mayor que 0
     If yearDiff < 0 Then
-        MsgBox "El valor de año final debe ser mayor o igual que el de inicio.", vbExclamation
+        MsgBox "El valor de a�o final debe ser mayor o igual que el de inicio.", vbExclamation
         Exit Sub
     End If
     
@@ -1890,15 +1890,15 @@ Sub Buton02()
         Call ReplicarPlanillaCalculo(startYear, 2, "Ventas", yearDiff)
           
         
-        positionRow = 4 ' Inicializamos la posición de la fila en 4 para el primer año
+        positionRow = 4 ' Inicializamos la posici�n de la fila en 4 para el primer a�o
          
         CountYear = 1
         For i = 0 To yearDiff
             yearInt = startYear + i
-            ' Llamamos a la función ProcesarRV, pasando tanto el año como la posición de la fila
+            ' Llamamos a la funci�n ProcesarRV, pasando tanto el a�o como la posici�n de la fila
              
             Call ProcesarRV(yearInt, positionRow, CountYear)
-            ' Después de cada año, incrementamos positionRow en 19 (para el siguiente año)
+            ' Despu�s de cada a�o, incrementamos positionRow en 19 (para el siguiente a�o)
             positionRow = positionRow + 19
             CountYear = CountYear + 13
             
@@ -1912,7 +1912,7 @@ Sub Buton02()
     End If
 End Sub
 
-' Pone en negrita los totales de O cuando la fila tiene código numérico en B
+' Pone en negrita los totales de O cuando la fila tiene c�digo num�rico en B
 Sub FormatTotalesF29()
     Dim ws As Worksheet, lastRow As Long, r As Long, hasCode As Boolean
     Set ws = ThisWorkbook.Sheets("F29")
@@ -1931,7 +1931,7 @@ Sub FormatTotalesF29()
     Next r
 End Sub
 
-' --- Rellena O con la suma de C:N cuando hay código numérico en B ---
+' --- Rellena O con la suma de C:N cuando hay c�digo num�rico en B ---
 Sub RecalcTotalesF29()
     Dim ws As Worksheet
     Dim lastRow As Long, r As Long
@@ -1973,10 +1973,10 @@ Private Sub LimpiarFilasPuente(ByVal hoja As String, ParamArray filas())
         Set rngRow = ws.Range("B" & f & ":M" & f)
 
         On Error Resume Next
-        rngRow.ClearContents                   ' intento rápido
+        rngRow.ClearContents                   ' intento r�pido
         If Err.Number <> 0 Then                ' si hay combinadas que molestan...
             Err.Clear: On Error GoTo 0
-            ' limpia celda a celda y, si está combinada, limpia toda el área combinada 1 sola vez
+            ' limpia celda a celda y, si est� combinada, limpia toda el �rea combinada 1 sola vez
             For Each c In rngRow.Cells
                 If c.MergeCells Then
                     If Not seen.Exists(c.MergeArea.Address) Then
@@ -2018,7 +2018,7 @@ Sub ReplicarPlanillaCalculo(startYear As Long, NumeroHoja As Integer, NombreHoja
         Case 3
             inicio = "A4": destino = "A4": Rango = "A4:N61": NumberoffsetRows = 2: NumberoffsetYear = 0
         Case Else
-            MsgBox "Número de hoja no válido.", vbExclamation
+            MsgBox "N�mero de hoja no v�lido.", vbExclamation
             Exit Sub
     End Select
 
@@ -2041,32 +2041,32 @@ Sub ReplicarPlanillaCalculo(startYear As Long, NumeroHoja As Integer, NombreHoja
     End If
     
     ' ======= LIMPIEZA DE FILAS PUENTE =======
-    ' Ventas: limpiar 3 filas antes de cada bloque anual (quedan con títulos)
+    ' Ventas: limpiar 3 filas antes de cada bloque anual (quedan con t�tulos)
     If NumeroHoja = 2 Then
         Dim stepRows As Long, baseRow As Long, k As Long, r As Long
         stepRows = ws.Range(Rango).Rows.Count + NumberoffsetRows   ' = 16 + 3 = 19
-        baseRow = 20                                              ' primera “puente” conocida
+        baseRow = 20                                              ' primera �puente� conocida
 
-        ' Limpia la primera “puente” del primer bloque
+        ' Limpia la primera �puente� del primer bloque
         LimpiarFilasPuente NombreHoja, baseRow
 
-        ' Limpia 37–39, 56–58, 75–77, ... (base + step*k - 2 .. base + step*k)
+        ' Limpia 37�39, 56�58, 75�77, ... (base + step*k - 2 .. base + step*k)
         For k = 1 To yearDiff
             r = baseRow + (stepRows * k) - 2
             LimpiarFilasPuente NombreHoja, r, r + 1, r + 2
         Next k
     End If
 
-    ' Compras: limpiar 3 filas “puente” en cada salto de año
+    ' Compras: limpiar 3 filas �puente� en cada salto de a�o
     If NumeroHoja = 1 Then
         Dim stepRowsC As Long, baseRowC As Long, kc As Long, rc As Long
         stepRowsC = ws.Range(Rango).Rows.Count + NumberoffsetRows   ' 16 + 3 = 19
-        baseRowC = 21                                               ' primer “puente” en Compras
+        baseRowC = 21                                               ' primer �puente� en Compras
 
         ' Limpia las primeras filas puente del primer bloque (si arrastran algo)
         LimpiarFilasPuente NombreHoja, 20, 21
 
-        ' Limpia 38–40, 57–59, 76–78, ... (base + step*k - 2 .. base + step*k)
+        ' Limpia 38�40, 57�59, 76�78, ... (base + step*k - 2 .. base + step*k)
         For kc = 1 To yearDiff
             rc = baseRowC + (stepRowsC * kc) - 2
             LimpiarFilasPuente NombreHoja, rc, rc + 1, rc + 2
@@ -2105,7 +2105,7 @@ Sub ReplicarDynamicFormula(ByVal NombreHoja As String, ByVal columnOffset As Int
             Dim r528 As Long: r528 = FindRowByYearAndCode(yC, "528")
             Dim r537 As Long: r537 = FindRowByYearAndCode(yC, "537")
             Dim r504 As Long: r504 = FindRowByYearAndCode(yC, "504")
-            Dim r562 As Long: r562 = FindRowByYearAndCode(yC, "562") ' S/L° Compras (sin derecho a CF)
+            Dim r562 As Long: r562 = FindRowByYearAndCode(yC, "562") ' S/L� Compras (sin derecho a CF)
 
             If r528 > 0 Then
                 formulaString01 = "=DESREF('F29'!$C$" & r528 & ";0;FILA()-" & rowOffset & ")"
@@ -2136,16 +2136,16 @@ Sub ReplicarDynamicFormula(ByVal NombreHoja As String, ByVal columnOffset As Int
             startRow = (columnOffset * 19) + 5
             rowOffset = startRow
 
-            ' Año que corresponde a este bloque replicado
+            ' A�o que corresponde a este bloque replicado
             Dim baseYearV As Long: baseYearV = ThisWorkbook.Sheets("Ventas").Range("G1").value
             Dim y As Long: y = baseYearV + columnOffset
 
-            ' Códigos a leer EN F29 (SOLO LECTURA)
+            ' C�digos a leer EN F29 (SOLO LECTURA)
             Dim r538 As Long: r538 = FindRowByYearAndCode(y, "538")
             Dim r142 As Long: r142 = FindRowByYearAndCode(y, "142")
             Dim r020 As Long: r020 = FindRowByYearAndCode(y, "020")   ' <<--- Exportaciones
 
-            ' Construcción de fórmulas
+            ' Construcci�n de f�rmulas
             If r538 > 0 Then
                 formulaString01 = "=DESREF('F29'!$C$" & r538 & ";0;FILA()-" & rowOffset & ")"
             Else
@@ -2166,11 +2166,11 @@ Sub ReplicarDynamicFormula(ByVal NombreHoja As String, ByVal columnOffset As Int
             End If
 
         Case Else
-            MsgBox "Número de hoja no válido.", vbExclamation
+            MsgBox "N�mero de hoja no v�lido.", vbExclamation
             Exit Sub
     End Select
 
-    ' Volcado de 12 meses (Ene–Dic) al bloque correspondiente
+    ' Volcado de 12 meses (Ene�Dic) al bloque correspondiente
     For i = startRow To startRow + 11
         If tipo = 1 Then
             wsDest.Cells(i, 3).FormulaLocal = formulaString01   ' Compras: Cod 528
@@ -2185,103 +2185,6 @@ Sub ReplicarDynamicFormula(ByVal NombreHoja As String, ByVal columnOffset As Int
     Next i
 End Sub
 
-Private Sub ResetEstructuraBaseF29()
-    Const TEMPLATE_SHEET_NAME As String = "__F29_PLANTILLA"
-
-    Dim wsF29 As Worksheet
-    Dim wsTemplate As Worksheet
-    Dim srcRange As Range
-
-    Set wsF29 = ThisWorkbook.Sheets("F29")
-
-    On Error Resume Next
-    Set wsTemplate = ThisWorkbook.Sheets(TEMPLATE_SHEET_NAME)
-    On Error GoTo 0
-
-    Application.ScreenUpdating = False
-
-    ' Si no existe, la creamos tomando un “snapshot” tal cual está F29 ahora mismo.
-    If wsTemplate Is Nothing Then
-        Set wsTemplate = ThisWorkbook.Sheets.Add(After:=wsF29)
-        wsTemplate.Name = TEMPLATE_SHEET_NAME
-
-        Set srcRange = wsF29.UsedRange
-        If Not srcRange Is Nothing Then
-            srcRange.Copy
-            wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteAll
-            wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteColumnWidths
-        End If
-
-        wsTemplate.Visible = xlSheetVeryHidden
-    Else
-        ' Si ya existe, la refrescamos en memoria con el estado actual de F29
-        ' únicamente cuando la plantilla esté vacía (p.ej. eliminada manualmente).
-        If UltimaFilaUsada(wsTemplate) = 0 Or UltimaColumnaUsada(wsTemplate) = 0 Then
-            Set srcRange = wsF29.UsedRange
-            If Not srcRange Is Nothing Then
-                wsTemplate.Cells.Clear
-                srcRange.Copy
-                wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteAll
-                wsTemplate.Range("A1").PasteSpecial Paste:=xlPasteColumnWidths
-            End If
-        End If
-    End If
-
-    ' Dejamos F29 limpio utilizando SIEMPRE la plantilla oculta.
-    If Not wsTemplate Is Nothing Then
-        Call RestaurarDesdePlantillaF29(wsF29, wsTemplate)
-    End If
-
-    Application.CutCopyMode = False
-    Application.ScreenUpdating = True
-End Sub
-
-Private Sub RestaurarDesdePlantillaF29(ByVal wsF29 As Worksheet, ByVal wsTemplate As Worksheet)
-    Dim lastRowPlantilla As Long
-    Dim lastColPlantilla As Long
-
-    lastRowPlantilla = UltimaFilaUsada(wsTemplate)
-    lastColPlantilla = UltimaColumnaUsada(wsTemplate)
-
-    If lastRowPlantilla = 0 Or lastColPlantilla = 0 Then Exit Sub
-
-    ' Limpiamos todo para evitar residuos de ejecuciones anteriores
-    wsF29.Cells.Clear
-
-    On Error Resume Next
-    wsF29.DrawingObjects.Delete
-    On Error GoTo 0
-
-    wsTemplate.Range(wsTemplate.Cells(1, 1), _
-                     wsTemplate.Cells(lastRowPlantilla, lastColPlantilla)).Copy
-
-    wsF29.Range("A1").PasteSpecial Paste:=xlPasteAll
-    wsF29.Range("A1").PasteSpecial Paste:=xlPasteColumnWidths
-End Sub
-
-Private Function UltimaFilaUsada(ByVal ws As Worksheet) As Long
-    Dim rng As Range
-    Set rng = ws.Cells.Find(What:="*", LookIn:=xlFormulas, _
-                            SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
-    If rng Is Nothing Then
-        UltimaFilaUsada = 0
-    Else
-        UltimaFilaUsada = rng.Row
-    End If
-End Function
-
-Private Function UltimaColumnaUsada(ByVal ws As Worksheet) As Long
-    Dim rng As Range
-    Set rng = ws.Cells.Find(What:="*", LookIn:=xlFormulas, _
-                            SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
-    If rng Is Nothing Then
-        UltimaColumnaUsada = 0
-    Else
-        UltimaColumnaUsada = rng.Column
-    End If
-End Function
-
-
 
 Sub LimpiaFormatea(NumeroHoja As Integer)
     Dim ws As Worksheet
@@ -2293,7 +2196,7 @@ Sub LimpiaFormatea(NumeroHoja As Integer)
         Case 2: NombreHoja = "Ventas"
         Case 3: NombreHoja = "F29"
         Case Else
-            MsgBox "Número de hoja no válido.", vbExclamation
+            MsgBox "N�mero de hoja no v�lido.", vbExclamation
             Exit Sub
     End Select
 
@@ -2325,7 +2228,7 @@ Sub LimpiarValores(NumeroHoja As Integer)
     
   
 
-    ' Determina el nombre de la hoja basado en el número de hoja
+    ' Determina el nombre de la hoja basado en el n�mero de hoja
     Select Case NumeroHoja
         Case 1
             NombreHoja = "Compras"
@@ -2334,7 +2237,7 @@ Sub LimpiarValores(NumeroHoja As Integer)
         Case 3
             NombreHoja = "F29"
         Case Else
-            MsgBox "Número de hoja no válido.", vbExclamation
+            MsgBox "N�mero de hoja no v�lido.", vbExclamation
             Exit Sub
     End Select
 
@@ -2361,10 +2264,10 @@ Sub LimpiarValores(NumeroHoja As Integer)
            
     End Select
     
-    ' Limpia las celdas del rango que no contienen fórmulas
+    ' Limpia las celdas del rango que no contienen f�rmulas
     For Each celda In Rango
         If Not celda.HasFormula Then
-            celda.ClearContents ' Limpia solo celdas sin fórmula
+            celda.ClearContents ' Limpia solo celdas sin f�rmula
         End If
     Next celda
 End Sub
@@ -2376,8 +2279,8 @@ Private Sub ProcesarRV(ByVal yearInput As Long, ByVal positionRow As Long, ByVal
     Dim wsSummary As Worksheet
     Dim wsFiles As Worksheet
     Dim mes As Integer
-    Dim arr() As Variant           ' <-- arreglo (con paréntesis)
-    Dim filtros() As Variant       ' <-- arreglo (con paréntesis) para pasar a la función
+    Dim arr() As Variant           ' <-- arreglo (con par�ntesis)
+    Dim filtros() As Variant       ' <-- arreglo (con par�ntesis) para pasar a la funci�n
     Dim pos As Integer
     Dim posArchivo As Integer
     Dim posicion As Integer
@@ -2399,7 +2302,7 @@ Private Sub ProcesarRV(ByVal yearInput As Long, ByVal positionRow As Long, ByVal
         filepath = RV_Path & "\" & wsFiles.Cells(posArchivo + mes, 5).value
 
         If wsFiles.Cells(posArchivo + mes, 5).value <> "" Then
-            ' S/L°Ventas (CLP):
+            ' S/L�Ventas (CLP):
             '   2023+ = (TipoDoc 33) - (TipoDoc 61)
             '   anteriores = 33,39,43,46,56,61
             If yearInput >= 2023 Then
@@ -2475,7 +2378,7 @@ Private Function SumaPorColumnaParametrica(filepath, mes, ByVal nombreColumnaB A
         Exit Function
     End If
     
-    ' Verificar que la cabecera de Monto IVA Recuperable sea correcta - 202412 se ha comentado ya que no esta tolerante a falla por datos no númericos y las instrucciones
+    ' Verificar que la cabecera de Monto IVA Recuperable sea correcta - 202412 se ha comentado ya que no esta tolerante a falla por datos no n�mericos y las instrucciones
     ' se ha reemplazado con el siguiente codigo.
     If InStr(1, headerRow, nombreColumnaRegresar, vbTextCompare) = 0 Then
         Logger "E", "Archivo " & mes, "La cabecera '" & nombreColumnaRegresar & "' no se encuentra en la fila 1 pos " & numeroColumnaRegresar
@@ -2496,9 +2399,9 @@ Private Function SumaPorColumnaParametrica(filepath, mes, ByVal nombreColumnaB A
         resultado = Application.Match(nombreColumnaRegresar, Hcols, 0)
         On Error GoTo 0
     
-        ' Verifica si la búsqueda fue exitosa
+        ' Verifica si la b�squeda fue exitosa
         If IsError(resultado) Then
-            'MsgBox "El valor '" & nombreColumnaRegresar & "' no se encontró en el rango.", vbExclamation
+            'MsgBox "El valor '" & nombreColumnaRegresar & "' no se encontr� en el rango.", vbExclamation
             Logger "E", "Archivo " & mes, "La cabecera '" & nombreColumnaRegresar & "' no se encuentra en la fila 1 pos " & numeroColumnaRegresar
         Else
             numeroColumnaRevisada = resultado
@@ -2511,7 +2414,7 @@ Private Function SumaPorColumnaParametrica(filepath, mes, ByVal nombreColumnaB A
     'MsgBox headerRow
     'MsgBox Hcols(numeroColumnaRegresar)
     'MsgBox numeroColumnaRevisada
-    ' Recorrer las líneas del archivo y realizar la suma de la columna correspondiente
+    ' Recorrer las l�neas del archivo y realizar la suma de la columna correspondiente
     For i = 1 To UBound(lines)
      ' MsgBox Trim(lines(i))
       If Trim(lines(i)) <> "" Then
@@ -2540,7 +2443,7 @@ Private Function SumaPorColumnaParametrica(filepath, mes, ByVal nombreColumnaB A
                   
                 Else
                   If columns(numeroColumnaRevisada - 1) <> "" Then
-                    Logger "W", "Compras", "Archivo " & mes & " tiene valor inválido en fila " & i
+                    Logger "W", "Compras", "Archivo " & mes & " tiene valor inv�lido en fila " & i
                   End If
                 End If
               End If
@@ -2564,7 +2467,7 @@ Function IsInArray(ByVal value As Variant, ByVal arr As Variant) As Boolean
     IsInArray = False
 End Function
 Sub ImprimirListayear(ByRef Lista As Collection)
-    ' Imprime los datos de la colección en una hoja de Excel
+    ' Imprime los datos de la colecci�n en una hoja de Excel
     Dim ws As Worksheet
     Dim i As Long
     Dim j As Long
@@ -2582,8 +2485,8 @@ Sub ImprimirListayear(ByRef Lista As Collection)
     
     ' Limpiar la hoja
     ws.Cells.Clear
-    ws.Cells(1, 1).value = "Código"
-    ws.Cells(1, 2).value = "Descripción"
+    ws.Cells(1, 1).value = "C�digo"
+    ws.Cells(1, 2).value = "Descripci�n"
     ws.Cells(1, 3).value = "Valor"
     
     ' Escribir los datos en la hoja
@@ -2609,9 +2512,9 @@ Sub LeerRuta()
     
     
     Dim miListayear As Collection
-    Set miListayear = New Collection ' Inicializas la colección
+    Set miListayear = New Collection ' Inicializas la colecci�n
     Dim respuesta As VbMsgBoxResult
-    respuesta = MsgBox("¿Requiere incluir carga de archivo PDF para F29?", vbYesNo + vbQuestion, "Confirmación")
+    respuesta = MsgBox("�Requiere incluir carga de archivo PDF para F29?", vbYesNo + vbQuestion, "Confirmaci�n")
     
     
     ' Obtener las rutas de las carpetas desde la hoja "Params"
@@ -2664,22 +2567,22 @@ Sub ImprimiryearArchivo(ByRef ListaYears As Collection)
     
     
     ws.Range("A2:B1000").ClearContents
-    ws.Cells(1, 1).value = "Año"
+    ws.Cells(1, 1).value = "A�o"
     ws.Cells(1, 2).value = "Mes"
 
     ' Inicializar la fila de inicio
     filaInicio = 2
 
-    ' Recorrer cada año en la lista
+    ' Recorrer cada a�o en la lista
     For Each year In ListaYears
-        ' Imprimir el año y los meses del 1 al 12
+        ' Imprimir el a�o y los meses del 1 al 12
         For mes = 1 To 12
             ws.Cells(filaInicio, 1).value = year
             ws.Cells(filaInicio, 2).value = ObtenerNombreMes(mes)
             filaInicio = filaInicio + 1
         Next mes
         
-        ' Agregar 3 filas en blanco antes del siguiente año
+        ' Agregar 3 filas en blanco antes del siguiente a�o
         filaInicio = filaInicio + 1
     Next year
 
@@ -2722,19 +2625,19 @@ Function LeerCarpetasPoranio(rutaBase, ByVal tipo As Integer, modo As Integer, N
     Dim i As Integer
     Dim Flag As Boolean
     
-    Set Listyear = New Collection ' Inicializas la colección
+    Set Listyear = New Collection ' Inicializas la colecci�n
     Flag = True
     
      
     ' Crear una instancia del sistema de archivos
     Set fileSystem = CreateObject("Scripting.FileSystemObject")
     
-    ' Validar si la ruta base es válida y existe
+    ' Validar si la ruta base es v�lida y existe
     If fileSystem.FolderExists(rutaBase) Then
         Set carpeta = fileSystem.GetFolder(rutaBase)
         
     Else
-        MsgBox "Error: La carpeta " & NombreForm & " no existe o la ruta es inválida."
+        MsgBox "Error: La carpeta " & NombreForm & " no existe o la ruta es inv�lida."
         Flag = False
         Set carpeta = Nothing ' Opcional para manejar nulos
         
@@ -2746,7 +2649,7 @@ Function LeerCarpetasPoranio(rutaBase, ByVal tipo As Integer, modo As Integer, N
         posicion = 2
         i = 0
         For Each subCarpeta In carpeta.SubFolders
-            ' Validar si el nombre de la subcarpeta es un año (formato YYYY)
+            ' Validar si el nombre de la subcarpeta es un a�o (formato YYYY)
             If IsNumeric(subCarpeta.Name) And Len(subCarpeta.Name) = 4 Then
                 anio = CLng(subCarpeta.Name)
                 Listyear.Add (anio)
@@ -2756,7 +2659,7 @@ Function LeerCarpetasPoranio(rutaBase, ByVal tipo As Integer, modo As Integer, N
                     If i = 0 Then
                         posicion = ObtenerFilaInicioDesdeHoja(anio)
                     End If
-                    ' Llamar a la función LeerArchivos con el año como parámetro
+                    ' Llamar a la funci�n LeerArchivos con el a�o como par�metro
                     Call LeerArchivos(anio, tipo, posicion)
                     posicion = posicion + 13
                 End If
@@ -2789,17 +2692,17 @@ Sub LeerArchivos(ByVal yearInput As Long, ByVal tipo As Integer, ByVal posicion 
     
         
     F29Path = Sheets("Param").Range("B2").value
-    ' Concatenar el año a la ruta
+    ' Concatenar el a�o a la ruta
     
     ' Obtener las rutas de las carpetas desde la hoja "Params"
     F29Folder = Sheets("Param").Range("B2").value
     RCFolder = Sheets("Param").Range("B4").value
     RVFolder = Sheets("Param").Range("B6").value
 
-    ' Concatenar el año a la ruta
-    F29Folder = F29Folder & "\" & yearInput ' Concatenar año al final de la ruta
-    RCFolder = RCFolder & "\" & yearInput ' Concatenar año al final de la ruta
-    RVFolder = RVFolder & "\" & yearInput ' Concatenar año al final de la ruta
+    ' Concatenar el a�o a la ruta
+    F29Folder = F29Folder & "\" & yearInput ' Concatenar a�o al final de la ruta
+    RCFolder = RCFolder & "\" & yearInput ' Concatenar a�o al final de la ruta
+    RVFolder = RVFolder & "\" & yearInput ' Concatenar a�o al final de la ruta
     
     ' Definir la hoja de resultados
     Set HojaResultados = Sheets("Archivos")
@@ -2869,15 +2772,15 @@ Sub LeerArchivos(ByVal yearInput As Long, ByVal tipo As Integer, ByVal posicion 
     Dim wsDest As Worksheet
 
    
-  Call DeterminarRangoAños("Ventas", 3)
-  Call DeterminarRangoAños("Compras", 4)
-  Call DeterminarRangoAños("Ventas", 5)
+  Call DeterminarRangoA�os("Ventas", 3)
+  Call DeterminarRangoA�os("Compras", 4)
+  Call DeterminarRangoA�os("Ventas", 5)
 
 End Sub
 
-Function ObtenerFilaInicioDesdeHoja(ByVal AñoBuscado As Long) As Long
+Function ObtenerFilaInicioDesdeHoja(ByVal A�oBuscado As Long) As Long
     Dim ws As Worksheet
-    Dim PrimerAño As Long
+    Dim PrimerA�o As Long
     Dim FilaBase As Long
     Dim PosicionRelativa As Long
 
@@ -2891,25 +2794,25 @@ Function ObtenerFilaInicioDesdeHoja(ByVal AñoBuscado As Long) As Long
     End If
     On Error GoTo 0
 
-    ' Obtener el PrimerAño desde la celda A2
-    PrimerAño = ws.Cells(2, 1).value
-    If Not IsNumeric(PrimerAño) Or PrimerAño = 0 Then
-        MsgBox "No se encontró un año válido en la celda A2.", vbCritical
+    ' Obtener el PrimerA�o desde la celda A2
+    PrimerA�o = ws.Cells(2, 1).value
+    If Not IsNumeric(PrimerA�o) Or PrimerA�o = 0 Then
+        MsgBox "No se encontr� un a�o v�lido en la celda A2.", vbCritical
         ObtenerFilaInicioDesdeHoja = -1
         Exit Function
     End If
 
-    ' Fila inicial del PrimerAño
+    ' Fila inicial del PrimerA�o
     FilaBase = 2
 
-    ' Calcular la posición relativa (diferencia en años)
-    PosicionRelativa = AñoBuscado - PrimerAño
+    ' Calcular la posici�n relativa (diferencia en a�os)
+    PosicionRelativa = A�oBuscado - PrimerA�o
 
     ' Calcular la fila de inicio
     ObtenerFilaInicioDesdeHoja = FilaBase + PosicionRelativa * 13
 End Function
 Sub Imprimir(nombre As String, Archivo As String, Data As String, pos As Integer)
-    ' Imprime los datos de la colección en una hoja de Excel
+    ' Imprime los datos de la colecci�n en una hoja de Excel
     Dim ws As Worksheet
     Dim i As Long
     Dim j As Long
@@ -2933,7 +2836,7 @@ Sub Imprimir(nombre As String, Archivo As String, Data As String, pos As Integer
     
 End Sub
 Sub LimpiarHoja(nombre As String)
-    ' Imprime los datos de la colección en una hoja de Excel
+    ' Imprime los datos de la colecci�n en una hoja de Excel
     Dim ws As Worksheet
     
     
@@ -2955,41 +2858,41 @@ Sub LimpiarHoja(nombre As String)
    
     
 End Sub
-Sub DeterminarRangoAños(NombreHoja As String, Columna As Integer)
+Sub DeterminarRangoA�os(NombreHoja As String, Columna As Integer)
     Dim wsSrc As Worksheet
     Dim wsDest As Worksheet
     Dim UltimaFila As Long
-    Dim AñoInicio As Long
-    Dim AñoFinal As Long
+    Dim A�oInicio As Long
+    Dim A�oFinal As Long
     Dim i As Long
-    Dim AñoActual As Long
+    Dim A�oActual As Long
 
     ' Referenciar las hojas
     Set wsSrc = ThisWorkbook.Sheets("Archivos")
     Set wsDest = ThisWorkbook.Sheets(NombreHoja)
     
-    ' Obtener la última fila de datos en la columna A
+    ' Obtener la �ltima fila de datos en la columna A
     UltimaFila = wsSrc.Cells(wsSrc.Rows.Count, 1).End(xlUp).Row
 
     ' Inicializar valores de inicio y final
-    AñoInicio = 0
-    AñoFinal = 0
+    A�oInicio = 0
+    A�oFinal = 0
 
     ' Recorrer las filas en la hoja "Archivos"
     For i = 2 To UltimaFila
-        AñoActual = wsSrc.Cells(i, 1).value ' Leer el año en la columna A
+        A�oActual = wsSrc.Cells(i, 1).value ' Leer el a�o en la columna A
         If wsSrc.Cells(i, Columna).value <> "" Then ' Verificar si hay un archivo en la columna C
-            If AñoInicio = 0 Then
-                AñoInicio = AñoActual ' Asignar el primer año encontrado
+            If A�oInicio = 0 Then
+                A�oInicio = A�oActual ' Asignar el primer a�o encontrado
             End If
-            AñoFinal = AñoActual ' Actualizar el último año encontrado
+            A�oFinal = A�oActual ' Actualizar el �ltimo a�o encontrado
         End If
     Next i
      
 
     ' Asignar los valores directamente en las celdas de la hoja "F29"
-    wsDest.Cells(1, 7).value = AñoInicio ' Columna G: Año de inicio
-    wsDest.Cells(1, 9).value = AñoFinal ' Columna I: Año final
+    wsDest.Cells(1, 7).value = A�oInicio ' Columna G: A�o de inicio
+    wsDest.Cells(1, 9).value = A�oFinal ' Columna I: A�o final
  
 End Sub
 
@@ -2999,11 +2902,11 @@ Function ObtenerNombreMes(ByVal NumeroMes As Integer) As String
     meses = Array("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", _
                   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
     
-    ' Validar que el número del mes esté en el rango válido (1 a 12)
+    ' Validar que el n�mero del mes est� en el rango v�lido (1 a 12)
     If NumeroMes >= 1 And NumeroMes <= 12 Then
         ObtenerNombreMes = meses(NumeroMes - 1)
     Else
-        ObtenerNombreMes = "Mes inválido"
+        ObtenerNombreMes = "Mes inv�lido"
     End If
 End Function
 
@@ -3013,13 +2916,13 @@ Sub Logger(tipo As String, seccion As String, Descripcion As String)
     Dim consecutivo&
     Dim UltimaFila As Long
     
-    ' Establecer la hoja de Excel donde se almacenará el log
+    ' Establecer la hoja de Excel donde se almacenar� el log
     Set ws = ThisWorkbook.Sheets("Log")
     
-    ' Obtener la última fila utilizada en la hoja de Excel
+    ' Obtener la �ltima fila utilizada en la hoja de Excel
     UltimaFila = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
-    ' Obtener el consecutivo sumando 1 a la última fila
+    ' Obtener el consecutivo sumando 1 a la �ltima fila
     consecutivo = UltimaFila + 1
     
     ' Escribir los valores en las columnas correspondientes
@@ -3058,7 +2961,7 @@ End Sub
 
 Option Explicit
 
-' --- PÉGALA AQUÍ (fuera de cualquier Sub/Function) ---
+' --- P�GALA AQU� (fuera de cualquier Sub/Function) ---
 Public Function ExtraerMesArchivo(ByVal nombre As String) As Integer
     Dim partes() As String
     Dim mm As String
@@ -3081,7 +2984,7 @@ Public Function ExtraerMesArchivo(ByVal nombre As String) As Integer
     
     Err.Raise vbObjectError + 513, , "Nombre de archivo inesperado: " & nombre
 End Function
-' --- FIN FUNCIÓN ---
+' --- FIN FUNCI�N ---
 
 Private Function FindRowByYearAndCode(ByVal year As Long, ByVal code As String) As Long
     Dim ws As Worksheet

@@ -2129,6 +2129,15 @@ Sub RecalcTotalesF29()
         Else
             ws.Cells(r, "O").ClearContents
         End If
+
+        ' Si es fila de Total credito/debito o Impuesto determinado o remanente, replica fórmula de col C a C:N
+        If label = "TOTAL CREDITO" Or label = "TOTAL CREDITOS" _
+           Or label = "TOTAL DEBITO" Or label = "TOTAL DEBITOS" _
+           Or label = "IMPUESTO DETERMINADO O REMANENTE" Then
+            If ws.Cells(r, "C").HasFormula Then
+                ws.Range(ws.Cells(r, "C"), ws.Cells(r, "N")).FormulaR1C1 = ws.Cells(r, "C").FormulaR1C1
+            End If
+        End If
     Next r
 
     Application.ScreenUpdating = True
@@ -2392,7 +2401,16 @@ Sub LimpiaFormatea(NumeroHoja As Integer)
     End Select
 
     If Rango.MergeCells Then Rango.UnMerge
-    Rango.EntireRow.Delete
+    If NumeroHoja = 3 Then
+        ' En F29 elimina cualquier bloque replicado previo dejando solo el bloque base (A4:N61)
+        Dim lastRowF29 As Long
+        lastRowF29 = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+        If lastRowF29 > 61 Then
+            ws.Rows("62:" & lastRowF29).Delete
+        End If
+    Else
+        Rango.EntireRow.Delete
+    End If
 End Sub
 
 
@@ -3143,5 +3161,3 @@ Private Function FindRowByYearAndCode(ByVal year As Long, ByVal code As String) 
         End If
     Next r
 End Function
-
-

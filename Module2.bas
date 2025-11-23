@@ -1206,13 +1206,14 @@ Private Sub ProcesarF29(ByVal yearInput As Long, ByVal positionRow As Integer, B
 
    ' Definir variables
     Dim F29Path As String
-  
     Dim wsFiles As Worksheet
     Dim wsDataset As Worksheet
+    Dim wsSummary As Worksheet
     Dim mes As Integer
     Dim posArchivo As Integer
     Dim posicion As Long
     Dim Dataset As String
+    Dim startRow As Long, endRow As Long, firstCodeRow As Long
     posicion = GetYearPosition(yearInput)
     If posicion > 0 Then
         posicion = posicion * 13
@@ -1225,9 +1226,9 @@ Private Sub ProcesarF29(ByVal yearInput As Long, ByVal positionRow As Integer, B
     ' Concatenar el a?o a la ruta
     F29Path = F29Path & "\" & CStr(yearInput)
      
-   
     Set wsFiles = Sheets("Archivos")
     Set wsDataset = Sheets("dataset")
+    Set wsSummary = Sheets("F29")
     Dim archivoPDF As String
     Dim archivoTXT As String
     posArchivo = CountY
@@ -1254,6 +1255,16 @@ Private Sub ProcesarF29(ByVal yearInput As Long, ByVal positionRow As Integer, B
         EnsureFilaCodigo091_DebajoImpuestoAPagar yearInput
         EnsureFilaTasaPPM yearInput
     End If
+    
+    ' Localizar el bloque real del a?o y la primera fila con c?digo
+    Call LimitesBloqueF29(yearInput, startRow, endRow)
+    If startRow = 0 Or endRow = 0 Then Exit Sub
+
+    firstCodeRow = startRow + 1
+    Do While firstCodeRow <= endRow And Not EsFilaDeCodigo(wsSummary, firstCodeRow)
+        firstCodeRow = firstCodeRow + 1
+    Loop
+    If firstCodeRow > endRow Then Exit Sub
      
     
     For mes = 1 To 12
@@ -1267,7 +1278,24 @@ Private Sub ProcesarF29(ByVal yearInput As Long, ByVal positionRow As Integer, B
             Dataset = wsDataset.Cells(posArchivo + mes, 2).value
             'MsgBox Dataset
             If Dataset <> "" Then
-                Call BuscarCodigos(mes, positionRow, Dataset)
+                Call BuscarCodigos(mes, firstCodeRow, endRow, Dataset)
+                ' Parche puntual: enero 2024 para c?digo 091
+                If yearInput = 2024 And mes = 1 Then
+                    Dim val91 As String, row91 As Long, rowImp As Long
+                    val91 = ValorDesdeDatasetPorCodigo(Dataset, 91)
+                    If Len(val91) > 0 Then
+                        row91 = FindRowByYearAndCode(yearInput, "091")
+                        If row91 > 0 Then
+                            ' Preferimos el valor de "Impuesto a Pagar" si existe; si no, usamos val91 extra?do
+                            rowImp = FindRowByYearAndLabel(yearInput, "Impuesto a Pagar")
+                            If rowImp > 0 And IsNumeric(wsSummary.Cells(rowImp, mes + 2).value) Then
+                                wsSummary.Cells(row91, mes + 2).value = wsSummary.Cells(rowImp, mes + 2).value
+                            Else
+                                wsSummary.Cells(row91, mes + 2).value = val91
+                            End If
+                        End If
+                    End If
+                End If
             Else
                 archivoTXT = archivoTXT & ": Sin datos"
                 MsgBox archivoTXT
@@ -1280,17 +1308,16 @@ Private Sub ProcesarF29(ByVal yearInput As Long, ByVal positionRow As Integer, B
 
 End Sub
 
-Sub BuscarCodigos(mes As Integer, ByVal positionRow As Integer, Dataset As String)
+Sub BuscarCodigos(mes As Integer, ByVal startRow As Long, ByVal endRow As Long, Dataset As String)
 'Sub BuscarCodigos(mes As Integer, archivoPDF As String, ByVal positionRow As Integer, Dataset As String)
     ' Definir variables
-    Dim i As Integer
+    Dim i As Long
     Dim wsSummary As Worksheet
     Dim codigo As String
     Dim desc As String
     Dim resultado As String
     Dim LineData As String
-    Dim Records As Integer
-    Dim pos As Integer
+    Dim pos As Long
     Dim Lista As Collection
     Set Lista = New Collection ' Inicializa la colecci?n
     Dim Result As Variant
@@ -1298,16 +1325,13 @@ Sub BuscarCodigos(mes As Integer, ByVal positionRow As Integer, Dataset As Strin
      
     
     Set Lista = GetDataPdf(Dataset)
-   
-    Records = 90
-    
     ' Obtener referencia a la hoja Summary
     Set wsSummary = ThisWorkbook.Sheets("F29")
     
-    pos = positionRow
+    pos = startRow
     
     
-    For i = pos To Records + pos
+    For i = pos To endRow
         codigo = wsSummary.Cells(pos, 2).value
         desc = UCase(wsSummary.Cells(pos, 1).value)
          
@@ -1468,17 +1492,27 @@ Function GetDataPdf(Dataset As String) As Collection
                     End If
                     Descripcion = "    " & Trim$(Descripcion) & "    "
 
-                    ' Ahora (mantiene tu excepci?n pero segura):
+                    ' Valor final: usa el valor num?rico detectado; para 091 no se usa el token siguiente (evita confundir "91" como monto)
+                    Dim valorFinal As String
+                    valorFinal = Valor
+
                     If IsNumeric(codigo) And CInt(codigo) = 91 Then
-                        If t + 1 <= UBound(Lineas) Then
-                            miLista.Add Array(miLista, codigo, Descripcion, FormatearNumero(Trim$(Lineas(t + 1))))
+                        Dim idxPrimera As Long
+                        idxPrimera = -1
+                        For k = t + 1 To scanEnd
+                            If EsTokenNumerico(Lineas(k)) Then
+                                idxPrimera = k
+                                Exit For
+                            End If
+                        Next k
+                        If idxPrimera <> -1 Then
+                            valorFinal = FormatearNumero(Trim$(Lineas(idxPrimera)))
                         Else
-                            ' si no hay t+1, usa el valor ya calculado con idxValor
-                            miLista.Add Array(miLista, codigo, Descripcion, Valor)
+                            valorFinal = Valor
                         End If
-                    Else
-                        miLista.Add Array(miLista, codigo, Descripcion, Valor)
                     End If
+
+                    miLista.Add Array(miLista, codigo, Descripcion, valorFinal)
 
                     ' Continuar desde el siguiente posible c?digo
                     If nextIdx > t Then
@@ -1495,6 +1529,70 @@ Function GetDataPdf(Dataset As String) As Collection
 
     Set miLista = OrdenarListaConWorksheetFunction(miLista)
     Set GetDataPdf = miLista
+End Function
+
+' Devuelve el ?ltimo valor num?rico encontrado despu?s del c?digo 91 en el dataset.
+Private Function ExtraerValorCodigo91(ByVal Dataset As String) As String
+    Dim s As String, toks() As String, i As Long, j As Long
+    Dim found As Boolean
+    Dim token As String
+
+    ' Normalizamos saltos y separamos en tokens simples
+    s = Replace(Dataset, vbCrLf, " ")
+    toks = Split(s, " ")
+
+    ExtraerValorCodigo91 = ""
+
+    For i = LBound(toks) To UBound(toks)
+        token = Trim$(toks(i))
+        If BuscarEnArray(token) Then
+            ' Solo activamos captura al encontrar exactamente el c?digo 91
+            If Val(token) = 91 Then
+                found = True
+                ' Buscar el primer num?rico posterior hasta antes del pr?ximo c?digo
+                For j = i + 1 To UBound(toks)
+                    If BuscarEnArray(Trim$(toks(j))) Then Exit For
+                    If EsTokenNumerico(toks(j)) Then
+                        ExtraerValorCodigo91 = FormatearNumero(Trim$(toks(j)))
+                        Exit Function
+                    End If
+                Next j
+                Exit For
+            End If
+        End If
+    Next i
+End Function
+
+' Busca el valor de un c?digo en el dataset usando el parser principal
+Private Function ValorDesdeDatasetPorCodigo(ByVal Dataset As String, ByVal codeNum As Long) As String
+    Dim lst As Collection, i As Long
+
+    ' Caso especial: c?digo 91 se extrae siempre con el parser dedicado para evitar tomar valores de otros c?digos
+    If codeNum = 91 Then
+        Dim vEsp As String
+        vEsp = ExtraerValorCodigo91(Dataset)
+        If Len(vEsp) > 0 Then
+            ValorDesdeDatasetPorCodigo = vEsp
+            Exit Function
+        End If
+    End If
+
+    Set lst = GetDataPdf(Dataset)
+    For i = 1 To lst.Count
+        If Val(lst(i)(1)) = codeNum Then
+            Dim v As String
+            v = lst(i)(3)
+            ' Si para 091 vino "91" (token equivocado), intenta extraer el valor real del dataset
+            If codeNum = 91 And IsNumeric(v) And CLng(v) = 91 Then
+                Dim v2 As String
+                v2 = ExtraerValorCodigo91(Dataset)
+                If Len(v2) > 0 Then ValorDesdeDatasetPorCodigo = v2 Else ValorDesdeDatasetPorCodigo = v
+            Else
+                ValorDesdeDatasetPorCodigo = v
+            End If
+            Exit Function
+        End If
+    Next i
 End Function
 
 Function OrdenarListaConWorksheetFunction(miLista As Collection) As Collection
@@ -3027,7 +3125,5 @@ Private Function FindRowByYearAndCode(ByVal year As Long, ByVal code As String) 
         End If
     Next r
 End Function
-
-
 
 

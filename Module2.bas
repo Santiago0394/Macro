@@ -2094,6 +2094,7 @@ Sub RecalcTotalesF29()
     Dim ws As Worksheet
     Dim lastRow As Long, r As Long
     Dim hasCode As Boolean
+    Dim label As String
 
     Set ws = ThisWorkbook.Sheets("F29")
     Application.ScreenUpdating = False
@@ -2106,8 +2107,22 @@ Sub RecalcTotalesF29()
             hasCode = IsNumeric(ws.Cells(r, "B").value)
         End If
 
-        ' También suma "Impuesto a Pagar" aunque no tenga código numérico
-        If hasCode Or UCase$(Trim$(CStr(ws.Cells(r, "A").value))) = "IMPUESTO A PAGAR" Then
+        label = UCase$(Trim$(CStr(ws.Cells(r, "A").value)))
+        label = Replace(label, ChrW(193), "A") ' ? -> A
+        label = Replace(label, ChrW(201), "E") ' ? -> E
+        label = Replace(label, ChrW(205), "I") ' ? -> I
+        label = Replace(label, ChrW(211), "O") ' ? -> O
+        label = Replace(label, ChrW(218), "U") ' ? -> U
+        label = Replace(label, ChrW(220), "U") ' ? -> U
+        Do While InStr(label, "  ") > 0
+            label = Replace(label, "  ", " ")
+        Loop
+
+        ' Tambien suma "Impuesto a Pagar" y totales de credito sin codigo numerico
+        If hasCode _
+           Or label = "IMPUESTO A PAGAR" _
+           Or label = "TOTAL CREDITO" _
+           Or label = "TOTAL CREDITOS" Then
             ws.Cells(r, "O").FormulaR1C1 = "=SUM(RC[-12]:RC[-1])"
         Else
             ws.Cells(r, "O").ClearContents
@@ -3126,7 +3141,5 @@ Private Function FindRowByYearAndCode(ByVal year As Long, ByVal code As String) 
         End If
     Next r
 End Function
-
-
 
 

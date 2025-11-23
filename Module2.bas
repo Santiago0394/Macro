@@ -2118,11 +2118,13 @@ Sub RecalcTotalesF29()
             label = Replace(label, "  ", " ")
         Loop
 
-        ' Tambien suma "Impuesto a Pagar" y totales de credito sin codigo numerico
+        ' Tambien suma "Impuesto a Pagar" y totales de credito/debito sin codigo numerico
         If hasCode _
            Or label = "IMPUESTO A PAGAR" _
            Or label = "TOTAL CREDITO" _
-           Or label = "TOTAL CREDITOS" Then
+           Or label = "TOTAL CREDITOS" _
+           Or label = "TOTAL DEBITO" _
+           Or label = "TOTAL DEBITOS" Then
             ws.Cells(r, "O").FormulaR1C1 = "=SUM(RC[-12]:RC[-1])"
         Else
             ws.Cells(r, "O").ClearContents

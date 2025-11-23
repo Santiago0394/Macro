@@ -2106,7 +2106,8 @@ Sub RecalcTotalesF29()
             hasCode = IsNumeric(ws.Cells(r, "B").value)
         End If
 
-        If hasCode Then
+        ' También suma "Impuesto a Pagar" aunque no tenga código numérico
+        If hasCode Or UCase$(Trim$(CStr(ws.Cells(r, "A").value))) = "IMPUESTO A PAGAR" Then
             ws.Cells(r, "O").FormulaR1C1 = "=SUM(RC[-12]:RC[-1])"
         Else
             ws.Cells(r, "O").ClearContents
@@ -3125,5 +3126,7 @@ Private Function FindRowByYearAndCode(ByVal year As Long, ByVal code As String) 
         End If
     Next r
 End Function
+
+
 
 
